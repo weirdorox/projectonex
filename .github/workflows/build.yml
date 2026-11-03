@@ -80,6 +80,23 @@ jobs:
         shell: pwsh
         run: ./scripts/publish.ps1
 
+      - name: Start-up smoke test (published build)
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path artifacts/publish/Lumen/Lumen.exe
+          $logs = Join-Path $env:LOCALAPPDATA 'Lumen/logs'
+          $p = Start-Process $exe -ArgumentList '--windowed' -PassThru
+          Start-Sleep -Seconds 25
+          $alive = -not $p.HasExited
+          Write-Host "Lumen alive after 25 s: $alive (exit code: $(if ($p.HasExited) { $p.ExitCode } else { '-' }))"
+          if (Test-Path $logs) { Get-ChildItem $logs | Sort-Object LastWriteTime | ForEach-Object { Write-Host "---- $($_.Name)"; Get-Content $_.FullName -Tail 200 } }
+          else { Write-Host "No log folder at $logs" }
+          Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-3) } -ErrorAction SilentlyContinue |
+            Where-Object { $_.ProviderName -in 'Application Error', '.NET Runtime', 'Windows Error Reporting' } |
+            ForEach-Object { Write-Host "==== $($_.ProviderName) $($_.TimeCreated)"; Write-Host $_.Message }
+          if ($alive) { Stop-Process -Id $p.Id -Force }
+          if (-not $alive) { throw "Lumen exited during start-up" }
+
       - uses: actions/upload-artifact@v4
         with:
           name: lumen-x64
