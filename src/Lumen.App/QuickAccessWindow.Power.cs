@@ -33,6 +33,7 @@ public sealed partial class QuickAccessWindow
             var status = await _main.Tdp.RefreshAsync();
             RenderTdp(status);
             await RenderSmartPreviewAsync();
+            RenderAdvisor(status);
         }
         catch (Exception ex)
         {
@@ -327,5 +328,42 @@ public sealed partial class QuickAccessWindow
             catch (Exception ex) { Log.Warn("Overlay timer failed.", ex); }
         };
         return t;
+    }
+
+    private void RenderAdvisor(TdpStatus status)
+    {
+        AdvisorPanel.Children.Clear();
+        var battery = App.Host.Battery.Read();
+        var display = _hw?.Display;
+        var advice = Lumen.Core.Performance.PerformanceAdvisor.Evaluate(new Lumen.Core.Performance.AdvisorInputs(
+            _main.Overlay.LatestFps?.Stats,
+            battery.Source == PowerSource.Battery,
+            battery.Percent,
+            display?.GetCurrent()?.RefreshHz,
+            display?.GetSupportedRefreshRates() ?? [],
+            status,
+            Lumen.Platform.Windows.Power.PowerHelperSetup.IsInstalledCached()));
+        if (advice.Count == 0)
+        {
+            AdvisorPanel.Children.Add(new TextBlock { Text = "Nothing to suggest right now.", Style = (Style)Application.Current.Resources["LumenCaptionText"] });
+            return;
+        }
+        foreach (var a in advice)
+        {
+            var panel = new StackPanel { Spacing = 2 };
+            panel.Children.Add(new TextBlock
+            {
+                Text = a.Title,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[a.Level switch
+                {
+                    Lumen.Core.Performance.AdviceLevel.Warning => "LumenWarnBrush",
+                    Lumen.Core.Performance.AdviceLevel.Suggestion => "LumenAccentBrush",
+                    _ => "LumenTextBrush",
+                }],
+            });
+            panel.Children.Add(new TextBlock { Text = a.Detail, TextWrapping = TextWrapping.Wrap, Style = (Style)Application.Current.Resources["LumenCaptionText"] });
+            AdvisorPanel.Children.Add(new Border { Style = (Style)Application.Current.Resources["LumenCardStyle"], Padding = new Thickness(12), Child = panel });
+        }
     }
 }

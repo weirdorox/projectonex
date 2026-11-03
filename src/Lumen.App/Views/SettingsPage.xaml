@@ -129,6 +129,21 @@
                 </StackPanel>
             </Border>
 
+            <!-- ================= Diagnostics ================= -->
+            <TextBlock Text="Diagnostics" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap"
+                               Text="What Lumen detected on this device: which features are available, unavailable (and why) or locked by the firmware, with live TDP readback and measured power. Export creates a zip of the logs and this report in Documents - nothing is uploaded." />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button x:Name="DiagnosticsButton" Content="Run diagnostics" Click="OnDiagnosticsClick" />
+                        <Button Content="Export logs (zip)" Click="OnExportLogsClick" />
+                    </StackPanel>
+                    <TextBlock x:Name="DiagnosticsText" FontFamily="Consolas" FontSize="13" IsTextSelectionEnabled="True"
+                               TextWrapping="Wrap" Foreground="{StaticResource LumenTextDimBrush}" Visibility="Collapsed" />
+                </StackPanel>
+            </Border>
+
             <TextBlock x:Name="AboutText" Style="{StaticResource LumenCaptionText}" Margin="0,12,0,0" />
         </StackPanel>
     </ScrollViewer>

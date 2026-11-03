@@ -81,6 +81,7 @@ public sealed partial class MainWindow : Window
         _navigator.QuickAccessRequested += ToggleQuickAccess;
         _navigator.EmergencyDesktopRequested += EmergencyDesktop;
         _navigator.ShortcutRequested += OnShortcut;
+        MouseMode = new MouseModeService(this, _navigator);
         host.Gamepad.ConnectionChanged += (_, e) =>
         {
             UpdateControllerIcon();
@@ -236,6 +237,11 @@ public sealed partial class MainWindow : Window
     }
 
     internal PerformanceOverlayService Overlay { get; }
+
+    internal MouseModeService MouseMode { get; }
+
+    /// <summary>Display scale for mouse speed (physical pixels per DIP).</summary>
+    internal double InputScale => Content?.XamlRoot?.RasterizationScale ?? 1.0;
 
     /// <summary>Controller shortcuts that work in games too: View+Y screenshot, View+X overlay mode.</summary>
     private void OnShortcut(NavAction action)

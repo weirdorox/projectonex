@@ -169,6 +169,8 @@ public sealed partial class QuickAccessWindow
         _updating = true;
         OverlayFullscreenToggle.IsOn = App.Host.Settings.Fullscreen;
         OverlayMinimizeToggle.IsOn = App.Host.Settings.MinimizeOnLaunch;
+        MouseModeToggle.IsOn = _main.MouseMode.Enabled;
+        MouseModeToggle.IsEnabled = _main.RunningGame is null;
         _updating = false;
 
         if (!_radiosProbed)
@@ -211,6 +213,12 @@ public sealed partial class QuickAccessWindow
         if (_updating) return;
         App.Host.Settings.Fullscreen = OverlayFullscreenToggle.IsOn;
         _main.SetFullscreen(OverlayFullscreenToggle.IsOn);
+    }
+
+    private void OnMouseModeToggled(object sender, RoutedEventArgs e)
+    {
+        if (_updating) return;
+        _main.MouseMode.SetEnabled(MouseModeToggle.IsOn, "Quick Access");
     }
 
     private void OnOverlayMinimizeToggled(object sender, RoutedEventArgs e)

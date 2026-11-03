@@ -177,6 +177,10 @@
                     <TextBlock Style="{StaticResource LumenCaptionText}"
                                Text="Lumen does not inject an FPS limiter into games (anti-cheat risk). Use the game's own limiter or Intel Graphics Software. Lowering the refresh rate saves power but is not an FPS limit." />
 
+                <!-- Advisor (real readings only, never changes anything by itself) -->
+                <TextBlock Text="Advisor" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                <StackPanel x:Name="AdvisorPanel" Spacing="8" />
+
                 <!-- Performance -->
                 <StackPanel x:Name="PerfSection" Spacing="8">
                     <TextBlock Text="Performance" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
@@ -267,6 +271,10 @@
                     </VariableSizedWrapGrid>
                     <TextBlock x:Name="CaptureNote" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap"
                                Text="Uses Xbox Game Bar (saved to Videos › Captures). Shortcut: View + Y = screenshot, View + X = performance overlay." />
+
+                    <ToggleSwitch x:Name="MouseModeToggle" Header="Controller as mouse (desktop and apps)" Toggled="OnMouseModeToggled" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap"
+                               Text="Left stick moves, A clicks, B right-clicks, right stick scrolls, hold RT for precision. Never active inside Lumen or while a game runs; turns itself off when a game starts. Windows does not let it click into administrator windows." />
 
                     <TextBlock Text="Connections" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
                     <ToggleSwitch x:Name="WifiToggle" Header="Wi-Fi" Toggled="OnWifiToggled" Visibility="Collapsed" />

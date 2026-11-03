@@ -49,6 +49,22 @@ public sealed class GamepadNavigator : IDisposable
     /// <summary>Global controller shortcuts (screenshot, overlay) - raised whether or not Lumen is in front.</summary>
     public event Action<NavAction>? ShortcutRequested;
 
+    /// <summary>Raw state after each poll (desktop mouse mode). Raised in the foreground and background.</summary>
+    public event Action<GamepadState>? StateRead;
+
+    private bool _fast;
+
+    /// <summary>Poll at the foreground rate even in the background (mouse mode needs smooth movement).</summary>
+    public bool FastPolling
+    {
+        get => _fast;
+        set
+        {
+            _fast = value;
+            UpdateInterval(_wasForeground);
+        }
+    }
+
     public void Start() => _timer.Start();
 
     public void SetProfile(ShellPerformanceProfile profile)
@@ -99,6 +115,9 @@ public sealed class GamepadNavigator : IDisposable
             UpdateInterval(foreground);
         }
 
+        try { StateRead?.Invoke(state); }
+        catch (Exception ex) { Log.Error("Controller state handler failed.", ex); }
+
         var actions = _mapper.Update(state, _clock.Elapsed);
         foreach (var action in actions)
         {
@@ -129,7 +148,7 @@ public sealed class GamepadNavigator : IDisposable
     }
 
     private void UpdateInterval(bool foreground) =>
-        _timer.Interval = foreground ? _profile.ForegroundInputInterval : _profile.BackgroundInputInterval;
+        _timer.Interval = foreground || _fast ? _profile.ForegroundInputInterval : _profile.BackgroundInputInterval;
 
     public void Dispose() => _timer.Stop();
 }
