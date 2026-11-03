@@ -56,6 +56,9 @@ public sealed class GameTileViewModel : ObservableObject
         GameSource.Gog => "GOG",
         GameSource.Xbox => "Xbox",
         GameSource.Folder => "Folder",
+        GameSource.Ubisoft => "Ubisoft Connect",
+        GameSource.EA => "EA app",
+        GameSource.BattleNet => "Battle.net",
         _ => "Manual",
     };
 

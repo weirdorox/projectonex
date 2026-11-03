@@ -145,7 +145,7 @@ public sealed partial class QuickAccessWindow
     private void OnTdpSetupClick(object sender, RoutedEventArgs e)
     {
         _main.ReturnToShell();
-        _main.NavigateTab(2);
+        _main.NavigateTab(MainWindow.SettingsTabIndex);
     }
 
     // ---------------- Smart Power ----------------

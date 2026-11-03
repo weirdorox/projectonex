@@ -221,7 +221,7 @@ public sealed partial class QuickAccessWindow
     private void OnLumenSettingsClick(object sender, RoutedEventArgs e)
     {
         _main.ReturnToShell();
-        _main.NavigateTab(2);
+        _main.NavigateTab(MainWindow.SettingsTabIndex);
     }
 
     private void OnWindowsSettingsClick(object sender, RoutedEventArgs e)

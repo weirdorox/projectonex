@@ -35,7 +35,13 @@
                            VerticalAlignment="Center" Margin="0,0,8,0" />
                 <Button x:Name="HomeTab" Content="Home" Style="{StaticResource LumenTabButtonStyle}" Click="OnTabClick" Tag="0" />
                 <Button x:Name="LibraryTab" Content="Library" Style="{StaticResource LumenTabButtonStyle}" Click="OnTabClick" Tag="1" />
-                <Button x:Name="SettingsTab" Content="Settings" Style="{StaticResource LumenTabButtonStyle}" Click="OnTabClick" Tag="2" />
+                <Button x:Name="CollectionsTab" Content="Collections" Style="{StaticResource LumenTabButtonStyle}" Click="OnTabClick" Tag="2" />
+                <Button x:Name="SearchTab" Style="{StaticResource LumenTabButtonStyle}" Click="OnTabClick" Tag="3" AutomationProperties.Name="Search">
+                    <FontIcon Glyph="&#xE721;" FontSize="16" />
+                </Button>
+                <Button x:Name="SettingsTab" Style="{StaticResource LumenTabButtonStyle}" Click="OnTabClick" Tag="4" AutomationProperties.Name="Settings">
+                    <FontIcon Glyph="&#xE713;" FontSize="16" />
+                </Button>
                 <TextBlock Text="RB" FontSize="12" FontWeight="Bold" Foreground="{StaticResource LumenTextDimBrush}"
                            VerticalAlignment="Center" Margin="8,0,0,0" />
             </StackPanel>

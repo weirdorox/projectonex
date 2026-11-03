@@ -275,7 +275,7 @@ public sealed partial class HomePage : Page, IShellPage
         return false;
     }
 
-    private void OnSetupClick(object sender, RoutedEventArgs e) => Shell.NavigateTab(2);
+    private void OnSetupClick(object sender, RoutedEventArgs e) => Shell.NavigateTab(MainWindow.SettingsTabIndex);
 
     private async void OnScanClick(object sender, RoutedEventArgs e)
     {

@@ -27,7 +27,28 @@
                         </StackPanel>
                     </Button>
                     <Button x:Name="FavoriteButton" Click="OnFavoriteClick" />
+                    <Button x:Name="HideButton" Click="OnHideClick" />
                 </StackPanel>
+
+                <!-- Play history -->
+                <Border Style="{StaticResource LumenCardStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Play history" Style="{StaticResource LumenSectionHeader}" Margin="0" />
+                        <StackPanel x:Name="StatsRow" Orientation="Horizontal" Spacing="28" />
+                        <StackPanel x:Name="Bars" Orientation="Horizontal" Spacing="6" Height="72" VerticalAlignment="Bottom" />
+                        <TextBlock x:Name="BarsCaption" Style="{StaticResource LumenCaptionText}" />
+                        <TextBlock x:Name="SessionsText" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Collections -->
+                <Border Style="{StaticResource LumenCardStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Collections" Style="{StaticResource LumenSectionHeader}" Margin="0" />
+                        <TextBlock Style="{StaticResource LumenCaptionText}" Text="Tick the collections this game belongs to. Create new ones in the Collections tab." />
+                        <StackPanel x:Name="CollectionOptions" Orientation="Horizontal" Spacing="8" />
+                    </StackPanel>
+                </Border>
 
                 <!-- Performance profile -->
                 <Border Style="{StaticResource LumenCardStyle}">

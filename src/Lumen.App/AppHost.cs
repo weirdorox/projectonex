@@ -32,6 +32,8 @@ public sealed class AppHost
     public required ShellSettings Settings { get; init; }
     public required IGameRepository Games { get; init; }
     public required IProfileRepository Profiles { get; init; }
+    public required ICollectionRepository Collections { get; init; }
+    public required Lumen.Core.Activity.IPlaySessionRepository History { get; init; }
     public required LibraryService Library { get; init; }
     public required GameLauncher Launcher { get; init; }
     public required PlaySessionTracker Sessions { get; init; }
@@ -76,6 +78,8 @@ public sealed class AppHost
         // Data
         IGameRepository games;
         IProfileRepository profiles;
+        ICollectionRepository collections;
+        Lumen.Core.Activity.IPlaySessionRepository history;
         ISettingsStore settingsStore;
         try
         {
@@ -83,6 +87,8 @@ public sealed class AppHost
             db.Migrate();
             games = new SqliteGameRepository(db);
             profiles = new SqliteProfileRepository(db);
+            collections = new SqliteCollectionRepository(db);
+            history = new SqlitePlaySessionRepository(db);
             settingsStore = new SqliteSettingsStore(db);
         }
         catch (Exception ex)
@@ -90,6 +96,8 @@ public sealed class AppHost
             Log.Error("Database unavailable - continuing in safe mode with an in-memory library.", ex);
             games = new InMemoryGameRepository();
             profiles = new InMemoryProfileRepository();
+            collections = new InMemoryCollectionRepository();
+            history = new Lumen.Core.Activity.InMemoryPlaySessionRepository();
             settingsStore = new InMemorySettingsStore();
             decision = StartupDecision.SafeMode;
             reason ??= $"The library database could not be opened ({ex.Message}).";
@@ -104,6 +112,9 @@ public sealed class AppHost
             new EpicScanner(registry),
             new GogScanner(registry, settings.PreferGogGalaxy),
             new XboxScanner(),
+            new UbisoftScanner(registry),
+            UninstallEntryScanner.Ea(registry),
+            UninstallEntryScanner.BattleNet(registry),
             new FolderScanner(() => settings.LibraryFolders),
         ];
 
@@ -117,6 +128,8 @@ public sealed class AppHost
             Settings = settings,
             Games = games,
             Profiles = profiles,
+            Collections = collections,
+            History = history,
             Library = new LibraryService(games, scanners),
             Launcher = new GameLauncher(),
             Sessions = new PlaySessionTracker(),
@@ -127,7 +140,6 @@ public sealed class AppHost
             Hardware = new Lazy<Task<HardwareServices>>(() => Task.Run(() => WindowsHardwareFactory.Create())),
         };
 
-        host.Sessions.SessionEnded += (id, duration) => _ = games.AddPlaytimeAsync(id, duration);
         return host;
     }
 }

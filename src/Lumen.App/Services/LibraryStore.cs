@@ -89,6 +89,12 @@ public sealed class LibraryStore
         await LoadAsync();
     }
 
+    public async Task SetHiddenAsync(GameEntry game, bool hidden)
+    {
+        await _host.Games.SetHiddenAsync(game.Id, hidden);
+        await LoadAsync();
+    }
+
     public async Task<LaunchResult> LaunchAsync(GameEntry game)
     {
         if (!game.IsInstalled) return LaunchResult.Fail($"{game.Title} is not installed.");
@@ -97,7 +103,6 @@ public sealed class LibraryStore
         if (!result.Success) return result;
 
         await _host.Games.RecordLaunchAsync(game.Id, DateTimeOffset.UtcNow);
-        if (result.ProcessId is { } pid) _host.Sessions.Track(game.Id, pid);
         await LoadAsync();
         return result;
     }

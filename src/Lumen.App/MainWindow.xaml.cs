@@ -22,7 +22,9 @@ namespace Lumen.App;
 /// </summary>
 public sealed partial class MainWindow : Window
 {
-    private static readonly Type[] TabPages = [typeof(HomePage), typeof(LibraryPage), typeof(SettingsPage)];
+    private static readonly Type[] TabPages = [typeof(HomePage), typeof(LibraryPage), typeof(CollectionsPage), typeof(SearchPage), typeof(SettingsPage)];
+
+    public const int HomeTabIndex = 0, LibraryTabIndex = 1, CollectionsTabIndex = 2, SearchTabIndex = 3, SettingsTabIndex = 4;
 
     private readonly AppHost _host;
     private readonly IntPtr _hwnd;
@@ -109,7 +111,7 @@ public sealed partial class MainWindow : Window
         // Where you left off: last tab and last focused game survive restarts, crashes and reboots.
         PendingFocusGameId = host.Settings.LastGameId;
         if (host.IsSafeMode) NavigateToSafeMode();
-        else NavigateTab(Math.Clamp(host.Settings.LastTab, 0, 1));
+        else NavigateTab(Math.Clamp(host.Settings.LastTab, 0, CollectionsTabIndex));
 
         _ = StartLibraryAsync();
         _ = WarmUpHardwareAsync();
@@ -251,7 +253,7 @@ public sealed partial class MainWindow : Window
             }
             : new SuppressNavigationTransitionInfo();
         _tab = index;
-        if (index <= 1) _host.Settings.LastTab = index;
+        if (index <= CollectionsTabIndex) _host.Settings.LastTab = index;
         ContentFrame.Navigate(TabPages[index], null, transition);
         UpdateTabs();
         UpdateHints();
@@ -289,7 +291,7 @@ public sealed partial class MainWindow : Window
         var accent = (Brush)Application.Current.Resources["LumenAccentBrush"];
         var soft = (Brush)Application.Current.Resources["LumenAccentSoftBrush"];
         var dim = (Brush)Application.Current.Resources["LumenTextDimBrush"];
-        Button[] tabs = [HomeTab, LibraryTab, SettingsTab];
+        Button[] tabs = [HomeTab, LibraryTab, CollectionsTab, SearchTab, SettingsTab];
         for (var i = 0; i < tabs.Length; i++)
         {
             var selected = i == _tab;

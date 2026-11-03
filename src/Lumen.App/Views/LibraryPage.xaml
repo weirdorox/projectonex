@@ -25,7 +25,10 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <!-- Filter pills are generated in code (LT / RT cycles them) -->
-            <StackPanel x:Name="FilterPanel" Orientation="Horizontal" Spacing="10" />
+            <ScrollViewer HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" Margin="0,0,16,0">
+                <StackPanel x:Name="FilterPanel" Orientation="Horizontal" Spacing="10" Padding="4" />
+            </ScrollViewer>
             <TextBlock x:Name="CountText" Grid.Column="1" Style="{StaticResource LumenCaptionText}" FontSize="15" VerticalAlignment="Center" />
         </Grid>
 

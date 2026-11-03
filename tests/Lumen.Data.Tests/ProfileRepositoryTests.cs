@@ -89,3 +89,63 @@ public sealed class ProfileRepositoryTests : IDisposable
         Assert.Equal(60, (await profiles.GetAsync("steam:620"))!.RefreshHz);
     }
 }
+
+public sealed class ActivityRepositoryTests : IDisposable
+{
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "lumen-act-" + Guid.NewGuid().ToString("N"));
+    private readonly LumenDatabase _db;
+
+    public ActivityRepositoryTests()
+    {
+        _db = new LumenDatabase(Path.Combine(_dir, "a.db"));
+        _db.Migrate();
+    }
+
+    public void Dispose()
+    {
+        SqliteConnection.ClearAllPools();
+        try { Directory.Delete(_dir, true); } catch { /* ignore */ }
+    }
+
+    [Fact]
+    public async Task Collections_and_membership()
+    {
+        var repo = new SqliteCollectionRepository(_db);
+        var a = Lumen.Core.Library.GameCollection.Create("RPGs", 1);
+        var b = Lumen.Core.Library.GameCollection.Create("Arcade", 0);
+        await repo.SaveAsync(a);
+        await repo.SaveAsync(b);
+        await repo.SaveAsync(a with { Name = "Role-playing" });
+        Assert.Equal(new[] { "Arcade", "Role-playing" }, (await repo.GetAllAsync()).Select(c => c.Name).ToArray());
+
+        await repo.SetMembershipAsync(a.Id, "steam:1", true);
+        await repo.SetMembershipAsync(a.Id, "steam:1", true); // idempotent
+        await repo.SetMembershipAsync(b.Id, "steam:1", true);
+        Assert.Single(await repo.GetGameIdsAsync(a.Id));
+        Assert.Equal(2, (await repo.GetCollectionIdsForGameAsync("steam:1")).Count);
+
+        await repo.DeleteAsync(a.Id);
+        Assert.Equal(new[] { b.Id }, (await repo.GetCollectionIdsForGameAsync("steam:1")).ToArray());
+    }
+
+    [Fact]
+    public async Task Play_sessions_round_trip_newest_first()
+    {
+        var repo = new SqlitePlaySessionRepository(_db);
+        var t = new DateTimeOffset(2026, 11, 1, 20, 0, 0, TimeSpan.Zero);
+        await repo.AddAsync(new Lumen.Core.Activity.PlaySession("steam:1", t, t.AddHours(1), true, 58.5, 14.2, 21, FpsMeasured: true));
+        await repo.AddAsync(new Lumen.Core.Activity.PlaySession("steam:1", t.AddDays(1), t.AddDays(1).AddMinutes(30), false));
+        await repo.AddAsync(new Lumen.Core.Activity.PlaySession("steam:2", t, t.AddMinutes(5), false));
+
+        var list = await repo.GetForGameAsync("steam:1");
+        Assert.Equal(2, list.Count);
+        Assert.Equal(t.AddDays(1), list[0].StartedAt);
+        var first = list[1];
+        Assert.True(first.OnBattery && first.FpsMeasured);
+        Assert.Equal(58.5, first.AvgFps);
+        Assert.Equal(14.2, first.AvgPackageWatts);
+        Assert.Equal(21, first.BatteryPercentUsed);
+        Assert.Equal(TimeSpan.FromHours(1), first.Duration);
+        Assert.Equal(3, (await repo.GetRecentAsync()).Count);
+    }
+}

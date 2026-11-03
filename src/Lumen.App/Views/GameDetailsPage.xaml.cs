@@ -2,6 +2,7 @@ using Lumen.App.Controls;
 using Lumen.App.Input;
 using Lumen.App.Services;
 using Lumen.App.ViewModels;
+using Lumen.Core.Activity;
 using Lumen.Core.Diagnostics;
 using Lumen.Core.Hardware;
 using Lumen.Core.Input;
@@ -42,6 +43,7 @@ public sealed partial class GameDetailsPage : Page, IShellPage
     [
         ButtonHint.Create("A", "Select"),
         ButtonHint.Create("Y", "Favorite"),
+        ButtonHint.Create("R", "Scroll"),
         ButtonHint.Create("B", "Back"),
     ];
 
@@ -71,6 +73,8 @@ public sealed partial class GameDetailsPage : Page, IShellPage
         Logo.Visibility = logo is null ? Visibility.Collapsed : Visibility.Visible;
         TitleText.Visibility = logo is null ? Visibility.Visible : Visibility.Collapsed;
         RenderFavorite(game);
+        _ = RenderStatsAsync(game.Id);
+        _ = RenderCollectionsAsync(game.Id);
         DetailsText.Text = string.Join(Environment.NewLine, new[]
         {
             $"Source: {tile.SourceLabel}",
@@ -239,8 +243,130 @@ public sealed partial class GameDetailsPage : Page, IShellPage
 
     // ---------------- actions ----------------
 
-    private void RenderFavorite(GameEntry game) =>
+    private void RenderFavorite(GameEntry game)
+    {
         FavoriteButton.Content = game.IsFavorite ? "★  Favorite" : "☆  Add to favorites";
+        HideButton.Content = game.IsHidden ? "Unhide" : "Hide from library";
+    }
+
+    private async void OnHideClick(object sender, RoutedEventArgs e)
+    {
+        if (Game is not { } g) return;
+        try
+        {
+            await Shell.Library.SetHiddenAsync(g, !g.IsHidden);
+            if (Game is { } updated)
+            {
+                RenderFavorite(updated);
+                Shell.ShowToast(updated.IsHidden ? $"{updated.Title} is hidden. Find it under Library › Hidden." : $"{updated.Title} is visible again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Hide/unhide failed.", ex);
+        }
+    }
+
+    // ---------------- play history ----------------
+
+    private async Task RenderStatsAsync(string gameId)
+    {
+        IReadOnlyList<PlaySession> sessions;
+        try { sessions = await App.Host.History.GetForGameAsync(gameId, 500); }
+        catch (Exception ex) { Log.Error("Loading play history failed.", ex); return; }
+
+        var stats = PlayStatsCalculator.Compute(sessions, DateTimeOffset.Now);
+        StatsRow.Children.Clear();
+        AddStat("Total", Hours(stats.Total));
+        AddStat("Sessions", stats.Sessions.ToString());
+        AddStat("Average", Hours(stats.Average));
+        AddStat("Last 7 days", Hours(stats.Last7Days));
+        AddStat("Avg FPS", stats.AvgFps is { } fps ? $"{fps:0}" : "—");
+        AddStat("Avg CPU package", stats.AvgPackageWatts is { } w ? $"{w:0.#} W" : "—");
+        AddStat("Battery drain", stats.AvgBatteryPercentPerHour is { } p ? $"{p:0.#} %/h" : "—");
+
+        Bars.Children.Clear();
+        var max = Math.Max(1, stats.Last14Days.Max(d => d.Played.TotalMinutes));
+        foreach (var day in stats.Last14Days)
+        {
+            var bar = new Border
+            {
+                Width = 22,
+                Height = Math.Max(3, 72 * day.Played.TotalMinutes / max),
+                VerticalAlignment = VerticalAlignment.Bottom,
+                CornerRadius = new CornerRadius(4),
+                Background = (Brush)Application.Current.Resources[day.Played > TimeSpan.Zero ? "LumenAccentBrush" : "LumenSurfaceHighBrush"],
+            };
+            Bars.Children.Add(bar);
+            ToolTipService.SetToolTip(bar, $"{day.Day:ddd d MMM}: {Hours(day.Played)}");
+        }
+        BarsCaption.Text = "Last 14 days (sessions shorter than a minute are ignored)";
+
+        var recent = sessions.Where(s => s.Duration >= PlayStatsCalculator.MinimumSession).Take(5).Select(s =>
+            $"{s.StartedAt.LocalDateTime:g} · {Hours(s.Duration)}" +
+            (s.OnBattery ? " · battery" : " · plugged in") +
+            (s.AvgFps is { } f && s.FpsMeasured ? $" · {f:0} FPS" : "") +
+            (s.AvgPackageWatts is { } pw ? $" · {pw:0.#} W CPU" : ""));
+        SessionsText.Text = sessions.Count == 0
+            ? "No sessions recorded yet. Lumen records a session whenever this game is in front, however it was started."
+            : string.Join(Environment.NewLine, recent) +
+              (stats.AvgFps is null ? $"{Environment.NewLine}FPS is shown only when it was really measured (performance overlay telemetry) - never estimated." : "");
+    }
+
+    private void AddStat(string label, string value)
+    {
+        var panel = new StackPanel { Spacing = 2 };
+        panel.Children.Add(new TextBlock { Text = value, FontSize = 22, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        panel.Children.Add(new TextBlock { Text = label, Style = (Style)Application.Current.Resources["LumenCaptionText"] });
+        StatsRow.Children.Add(panel);
+    }
+
+    private static string Hours(TimeSpan t) =>
+        t.TotalHours >= 1 ? $"{t.TotalHours:0.#} h" : $"{Math.Round(t.TotalMinutes):0} min";
+
+    // ---------------- collections ----------------
+
+    private async Task RenderCollectionsAsync(string gameId)
+    {
+        try
+        {
+            var all = await App.Host.Collections.GetAllAsync();
+            var mine = (await App.Host.Collections.GetCollectionIdsForGameAsync(gameId)).ToHashSet();
+            CollectionOptions.Children.Clear();
+            if (all.Count == 0)
+            {
+                CollectionOptions.Children.Add(Note("No collections yet."));
+                return;
+            }
+            foreach (var c in all)
+            {
+                var member = mine.Contains(c.Id);
+                var b = new Button
+                {
+                    Content = (member ? "✓  " : "") + c.Name,
+                    Style = (Style)Application.Current.Resources["LumenPillButtonStyle"],
+                };
+                if (member)
+                {
+                    b.Background = (Brush)Application.Current.Resources["LumenAccentSoftBrush"];
+                    b.Foreground = (Brush)Application.Current.Resources["LumenAccentBrush"];
+                }
+                var id = c.Id;
+                b.Click += async (_, _) =>
+                {
+                    await App.Host.Collections.SetMembershipAsync(id, gameId, !member);
+                    await RenderCollectionsAsync(gameId);
+                    var again = CollectionOptions.Children.OfType<Button>().FirstOrDefault(x => ((string)x.Content).EndsWith(c.Name, StringComparison.Ordinal));
+                    if (again is not null) FocusNavigation.Focus(again);
+                };
+                CollectionOptions.Children.Add(b);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Loading collections failed.", ex);
+        }
+    }
 
     private void OnPlayClick(object sender, RoutedEventArgs e)
     {

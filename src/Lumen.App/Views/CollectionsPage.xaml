@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Lumen.App.Views.CollectionsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Lumen.App.Controls"
+    NavigationCacheMode="Required"
+    Background="Transparent">
+
+    <Page.Resources>
+        <DataTemplate x:Key="TileTemplate">
+            <controls:GameTile />
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid Padding="48,8,48,0" RowSpacing="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ScrollViewer HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" Margin="0,0,16,0">
+                <StackPanel x:Name="PillPanel" Orientation="Horizontal" Spacing="10" Padding="4" />
+            </ScrollViewer>
+            <TextBlock x:Name="CountText" Grid.Column="1" Style="{StaticResource LumenCaptionText}" FontSize="15" VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- New collection (on-screen keyboard) -->
+        <Border x:Name="NewPanel" Grid.Row="1" Style="{StaticResource LumenCardStyle}" Visibility="Collapsed" HorizontalAlignment="Left">
+            <StackPanel Spacing="12">
+                <TextBlock Text="New collection" Style="{StaticResource LumenSectionHeader}" Margin="0" />
+                <TextBox x:Name="NameBox" PlaceholderText="Name, e.g. Couch co-op" FontSize="20" MaxLength="40" IsTabStop="False" Width="560" HorizontalAlignment="Left" />
+                <controls:OnScreenKeyboard x:Name="Keyboard" />
+                <TextBlock x:Name="NewError" Style="{StaticResource LumenCaptionText}" Foreground="{StaticResource LumenWarnBrush}" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer x:Name="Scroller" Grid.Row="2" VerticalScrollBarVisibility="Hidden"
+                      HorizontalScrollMode="Disabled" Padding="0,10,0,32">
+            <StackPanel Spacing="16">
+                <StackPanel x:Name="ActionsPanel" Orientation="Horizontal" Spacing="10" />
+                <ItemsRepeater x:Name="GridRepeater" ItemTemplate="{StaticResource TileTemplate}"
+                               ElementPrepared="OnElementPrepared" ElementClearing="OnElementClearing">
+                    <ItemsRepeater.Layout>
+                        <UniformGridLayout MinItemWidth="{StaticResource TileWidth}"
+                                           MinItemHeight="{StaticResource TileHeight}"
+                                           MinRowSpacing="22" MinColumnSpacing="18" ItemsJustification="Start" />
+                    </ItemsRepeater.Layout>
+                </ItemsRepeater>
+                <TextBlock x:Name="EmptyText" Visibility="Collapsed" Style="{StaticResource LumenCaptionText}" FontSize="16" TextWrapping="Wrap" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

@@ -9,6 +9,9 @@ public enum GameSource
     Gog = 3,
     Xbox = 4,
     Folder = 5,
+    Ubisoft = 6,
+    EA = 7,
+    BattleNet = 8,
 }
 
 /// <summary>How a game is started.</summary>

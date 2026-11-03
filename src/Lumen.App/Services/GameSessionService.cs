@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Lumen.Core.Activity;
 using Lumen.Core.Diagnostics;
+using Lumen.Core.Hardware;
 using Lumen.Core.Library;
 using Lumen.Core.Models;
 using Lumen.Core.Profiles;
@@ -28,6 +30,19 @@ public sealed class GameSessionService
     private ProfileEngine? _engine;
     private HardwareProfileAdapter? _adapter;
     private bool _busy;
+    private SessionRecorder? _recorder;
+    private int _ticks;
+
+    /// <summary>Collects what a play session record needs. Only real readings - nothing is estimated.</summary>
+    private sealed class SessionRecorder(string gameId, DateTimeOffset startedAt, BatteryStatus battery)
+    {
+        public string GameId { get; } = gameId;
+        public DateTimeOffset StartedAt { get; } = startedAt;
+        public int? StartPercent { get; } = battery.HasBattery ? battery.Percent : null;
+        public bool EverOnAc { get; set; } = battery.Source != PowerSource.Battery;
+        public double WattsSum { get; set; }
+        public int WattsSamples { get; set; }
+    }
 
     public GameSessionService(AppHost host, MainWindow shell, DispatcherQueue ui)
     {
@@ -144,6 +159,8 @@ public sealed class GameSessionService
                 }
             }
 
+            if (_recorder is not null && ++_ticks % 15 == 0) await SampleAsync(_recorder);
+
             var active = _shell.RunningGame;
             var alive = active is null || ForegroundProcess.IsAlive(active.Process.ProcessId);
 
@@ -173,6 +190,8 @@ public sealed class GameSessionService
         LastReport = report;
         PersistBaseline(_engine!.Baseline);
         _shell.RunningGame = new RunningGame(game, process, DateTimeOffset.UtcNow);
+        _recorder = new SessionRecorder(game.Id, DateTimeOffset.UtcNow, _host.Battery.Read());
+        _ticks = 0;
         Log.Info($"Game session started: {game.Title} (pid {process.ProcessId}), profile: {(profile is null ? "none" : string.Join(", ", report.Fields.Select(f => $"{f.Key}={f.Value}")))}.");
 
         if (report.AnyApplied) _shell.ShowToast($"{game.Title}: performance profile applied");
@@ -187,9 +206,63 @@ public sealed class GameSessionService
         PersistBaseline(null);
         _shell.RunningGame = null;
         _seen.Clear();
+        await RecordAsync();
         Log.Info($"Game session ended: {title}.");
         _ = _shell.Library.LoadAsync(); // play stats / last played
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ---------------- play history ----------------
+
+    private async Task SampleAsync(SessionRecorder r)
+    {
+        try
+        {
+            if (_host.Battery.Read().Source != PowerSource.Battery) r.EverOnAc = true;
+            // Measured CPU package power only when the TDP helper is already in use (never started just for stats).
+            if (_shell.Tdp.Status.Available)
+            {
+                var status = await _shell.Tdp.RefreshAsync();
+                if (status.PackageWatts is { } w and > 0)
+                {
+                    r.WattsSum += w;
+                    r.WattsSamples++;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Session sampling failed.", ex);
+        }
+    }
+
+    private async Task RecordAsync()
+    {
+        var r = _recorder;
+        _recorder = null;
+        if (r is null) return;
+        try
+        {
+            var end = DateTimeOffset.UtcNow;
+            var battery = _host.Battery.Read();
+            if (battery.Source != PowerSource.Battery) r.EverOnAc = true;
+            double? used = !r.EverOnAc && r.StartPercent is { } a && battery.Percent is { } b && a >= b ? a - b : null;
+            var session = new PlaySession(
+                r.GameId, r.StartedAt, end,
+                OnBattery: !r.EverOnAc,
+                AvgFps: null, // FPS only when measured by the telemetry overlay
+                AvgPackageWatts: r.WattsSamples > 0 ? Math.Round(r.WattsSum / r.WattsSamples, 1) : null,
+                BatteryPercentUsed: used,
+                FpsMeasured: false);
+            await _host.History.AddAsync(session);
+            if (session.Duration >= PlayStatsCalculator.MinimumSession)
+                await _host.Games.AddPlaytimeAsync(r.GameId, session.Duration);
+            Log.Info($"Play session recorded: {session.Duration.TotalMinutes:0.#} min, battery {(session.OnBattery ? "yes" : "no")}, watts {session.AvgPackageWatts?.ToString() ?? "n/a"}.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Recording play session failed.", ex);
+        }
     }
 
     // ---------------- crash safety ----------------

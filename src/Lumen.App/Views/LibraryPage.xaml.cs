@@ -25,8 +25,14 @@ public sealed partial class LibraryPage : Page, IShellPage
         new("Epic", g => g.Source == GameSource.Epic),
         new("GOG", g => g.Source == GameSource.Gog),
         new("Xbox", g => g.Source == GameSource.Xbox),
+        new("Ubisoft", g => g.Source == GameSource.Ubisoft),
+        new("EA", g => g.Source == GameSource.EA),
+        new("Battle.net", g => g.Source == GameSource.BattleNet),
         new("Folders", g => g.Source is GameSource.Folder or GameSource.Manual),
+        new("Hidden", g => g.IsHidden),
     ];
+
+    private bool ShowingHidden => Filters[_filter].Label == "Hidden";
 
     private readonly List<Button> _pills = [];
     private int _filter;
@@ -81,7 +87,9 @@ public sealed partial class LibraryPage : Page, IShellPage
 
     private void Refresh()
     {
-        var all = LibraryService.AllVisible(Shell.Library.Games);
+        var all = ShowingHidden
+            ? Shell.Library.Games.Where(g => g.IsInstalled && g.IsHidden).OrderBy(g => g.SortTitle, StringComparer.Ordinal).ToList()
+            : LibraryService.AllVisible(Shell.Library.Games);
         var games = all.Where(Filters[_filter].Predicate).ToList();
 
         var accent = (Brush)Application.Current.Resources["LumenAccentBrush"];

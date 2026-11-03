@@ -27,7 +27,7 @@ public sealed class LumenDatabase
 
     public string Path { get; }
 
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     public SqliteConnection Open()
     {
@@ -120,6 +120,33 @@ public sealed class LumenDatabase
             tdp_watts   INTEGER NULL,
             updated_at  TEXT NOT NULL
         );
+        """,
+        // v3: collections + play session history
+        """
+        CREATE TABLE IF NOT EXISTS collections (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL,
+            sort_order  INTEGER NOT NULL DEFAULT 0,
+            created_at  TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS collection_games (
+            collection_id TEXT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+            game_id       TEXT NOT NULL,
+            PRIMARY KEY (collection_id, game_id)
+        );
+        CREATE INDEX IF NOT EXISTS ix_collection_games_game ON collection_games(game_id);
+        CREATE TABLE IF NOT EXISTS play_sessions (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id          TEXT NOT NULL,
+            started_at       TEXT NOT NULL,
+            ended_at         TEXT NOT NULL,
+            on_battery       INTEGER NOT NULL DEFAULT 0,
+            avg_fps          REAL NULL,
+            fps_measured     INTEGER NOT NULL DEFAULT 0,
+            avg_package_w    REAL NULL,
+            battery_used_pct REAL NULL
+        );
+        CREATE INDEX IF NOT EXISTS ix_play_sessions_game ON play_sessions(game_id, started_at);
         """,
     ];
 }
