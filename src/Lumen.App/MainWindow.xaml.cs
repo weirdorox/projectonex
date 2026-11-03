@@ -110,6 +110,9 @@ public sealed partial class MainWindow : Window
     }
 
     public LibraryStore Library { get; }
+
+    /// <summary>The library game currently running, if known (set by the game process watcher).</summary>
+    public RunningGame? RunningGame { get; internal set; }
     public AppHost Host => _host;
     public IntPtr Hwnd => _hwnd;
 

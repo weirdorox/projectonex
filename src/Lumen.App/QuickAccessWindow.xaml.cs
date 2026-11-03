@@ -85,12 +85,16 @@ public sealed partial class QuickAccessWindow : Window
     {
         try
         {
+            CaptureTarget(); // must run before we take the foreground
             PositionOnRightEdge();
             AppWindow.Show();
             Activate();
             DesktopSwitcher.BringToForeground(_hwnd);
             IsOpen = true;
             UpdateHeader();
+            SetSection(_targetGame is null ? 0 : 1, focus: false);
+            RenderGameSection();
+            _ = RenderSystemSectionAsync();
             DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => FocusNavigation.Focus(HomeButton));
 
             _hw ??= await App.Host.Hardware.Value;
@@ -140,6 +144,12 @@ public sealed partial class QuickAccessWindow : Window
             case NavAction.ScrollDown:
             case NavAction.ScrollUp:
                 FocusNavigation.Scroll(Scroller, action == NavAction.ScrollDown);
+                break;
+            case NavAction.PreviousTab:
+                SetSection(_section - 1);
+                break;
+            case NavAction.NextTab:
+                SetSection(_section + 1);
                 break;
         }
     }

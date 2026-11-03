@@ -38,6 +38,25 @@
                     </Button>
                 </Grid>
 
+                <!-- Section tabs (LB / RB) -->
+                <Grid ColumnSpacing="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="LB" FontSize="11" FontWeight="Bold" Foreground="{StaticResource LumenTextDimBrush}" VerticalAlignment="Center" />
+                    <Button x:Name="QuickTab" Grid.Column="1" Content="Quick" Tag="0" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" HorizontalAlignment="Stretch" />
+                    <Button x:Name="GameTab" Grid.Column="2" Content="Game" Tag="1" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" HorizontalAlignment="Stretch" />
+                    <Button x:Name="SystemTab" Grid.Column="3" Content="System" Tag="2" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" HorizontalAlignment="Stretch" />
+                    <TextBlock Grid.Column="4" Text="RB" FontSize="11" FontWeight="Bold" Foreground="{StaticResource LumenTextDimBrush}" VerticalAlignment="Center" />
+                </Grid>
+
+                <!-- ================= QUICK ================= -->
+                <StackPanel x:Name="QuickPanel" Spacing="20">
+
                 <!-- Volume -->
                 <StackPanel x:Name="VolumeSection" Spacing="4">
                     <Grid>
@@ -113,6 +132,58 @@
                 </StackPanel>
 
                 <TextBlock x:Name="UnsupportedText" Style="{StaticResource LumenCaptionText}" FontSize="13" />
+                </StackPanel>
+
+                <!-- ================= GAME ================= -->
+                <StackPanel x:Name="GamePanel" Spacing="14" Visibility="Collapsed">
+                    <Grid ColumnSpacing="14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="72" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="72" Height="108" CornerRadius="8" Background="{StaticResource LumenSurfaceHighBrush}">
+                            <Image x:Name="GameArt" Stretch="UniformToFill" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                            <TextBlock x:Name="GameTitle" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"
+                                       Foreground="{StaticResource LumenTextBrush}" />
+                            <TextBlock x:Name="GameSubtitle" Style="{StaticResource LumenCaptionText}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Per-game profile (filled in code; see Feature 3) -->
+                    <StackPanel x:Name="ProfilePanel" Spacing="8" />
+
+                    <Button x:Name="CloseGameButton" Content="Close game" HorizontalAlignment="Stretch" Click="OnCloseGameClick" />
+                    <Button x:Name="ForceCloseButton" Content="Force close (unsaved progress is lost)" HorizontalAlignment="Stretch"
+                            Visibility="Collapsed" Click="OnForceCloseClick" />
+                    <TextBlock x:Name="GameStatusText" Style="{StaticResource LumenCaptionText}" />
+                </StackPanel>
+
+                <!-- ================= SYSTEM ================= -->
+                <StackPanel x:Name="SystemPanel" Spacing="12" Visibility="Collapsed">
+                    <TextBlock Text="Connections" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <ToggleSwitch x:Name="WifiToggle" Header="Wi-Fi" Toggled="OnWifiToggled" Visibility="Collapsed" />
+                    <ToggleSwitch x:Name="BluetoothToggle" Header="Bluetooth" Toggled="OnBluetoothToggled" Visibility="Collapsed" />
+                    <TextBlock x:Name="RadiosUnavailableText" Style="{StaticResource LumenCaptionText}" Visibility="Collapsed"
+                               Text="Wi-Fi/Bluetooth switches are unavailable (no radio found, or radio access is off in Windows privacy settings)." />
+
+                    <TextBlock Text="Lumen" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                    <ToggleSwitch x:Name="OverlayFullscreenToggle" Header="Fullscreen console mode" Toggled="OnOverlayFullscreenToggled" />
+                    <ToggleSwitch x:Name="OverlayMinimizeToggle" Header="Minimize Lumen while playing" Toggled="OnOverlayMinimizeToggled" />
+                    <Button Content="All Lumen settings" HorizontalAlignment="Stretch" Click="OnLumenSettingsClick" />
+
+                    <TextBlock Text="Windows settings" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}" Text="Opens on top of Lumen - the desktop stays hidden." />
+                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="182" ItemHeight="56">
+                        <Button Content="Display" Tag="ms-settings:display" Click="OnWindowsSettingsClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Sound" Tag="ms-settings:sound" Click="OnWindowsSettingsClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Bluetooth" Tag="ms-settings:bluetooth" Click="OnWindowsSettingsClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Wi-Fi" Tag="ms-settings:network-wifi" Click="OnWindowsSettingsClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Battery" Tag="ms-settings:batterysaver" Click="OnWindowsSettingsClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Updates" Tag="ms-settings:windowsupdate" Click="OnWindowsSettingsClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                    </VariableSizedWrapGrid>
+                </StackPanel>
 
                 <Button Content="Close" Click="OnCloseClick" HorizontalAlignment="Stretch" />
             </StackPanel>
