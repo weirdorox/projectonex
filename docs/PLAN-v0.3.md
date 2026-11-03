@@ -57,6 +57,16 @@ Inno Setup installer, GitHub Actions CI (Linux tests + Windows build/publish/ins
 | Gyro, mouse emulation, button remapping of OEM keys | Vendor buttons may not be XInput; remapping stays in OneXConsole. Stick-as-mouse "desktop mode" planned Phase 5. |
 | Universal game suspend / instant game resume | Not possible on Windows; not promised. |
 
+## Status (end of this round)
+
+| Phase | Status |
+|---|---|
+| 2 – battery telemetry, real TDP backend + helper + presets, Smart Power | ✅ implemented, CI green – **needs on-device verification** |
+| 3 – Quick Access tabs, power actions, battery tab | ✅ implemented (resolution/HDR/mic mute, FPS telemetry/OSD still open) |
+| 4 – TDP in per-game profiles | ✅; search, collections, hide, launch args, EA/Ubisoft/Battle.net still open |
+| 5 – instant resume, unlock handling, session restore | ✅; docked mode, UI sounds, desktop mouse mode still open |
+| 6 – premium | not started |
+
 ## 4. Implementation order (each phase: build + tests in CI before the next)
 
 1. **Phase 2 – Core system controls:** battery telemetry (`Windows.Devices.Power` report: watts,

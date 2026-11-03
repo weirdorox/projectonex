@@ -62,6 +62,24 @@ Run each item; note pass/fail and attach `%LOCALAPPDATA%\Lumen\logs` for failure
 - [ ] Unplug charger: battery icon changes; at ≤ 20 % focus animations stop
 - [ ] Lumen idle in background while a game runs: < 1 % CPU in Task Manager
 
+**v0.2 – cinematic UI, overlay, profiles, power**
+- [ ] Moving between tiles cross-fades the backdrop smoothly; fast D-pad scrolling stays fluid; logos replace titles for Steam games
+- [ ] Turning off Windows "Animation effects" (or ≤ 20 % battery) disables the motion
+- [ ] Launching shows the launch curtain; it disappears when the game window appears (B dismisses it)
+- [ ] Quick access tabs (LB/RB): Quick, Power, Battery, Game, System
+- [ ] In a running game: Game tab recognises it (also when started outside Lumen); "Close game" asks politely, "Force close" only after
+- [ ] Wi-Fi / Bluetooth toggles really switch the radios (or are hidden with an explanation)
+- [ ] X on a tile → details; set refresh rate / plan / brightness / TDP; start the game: settings applied after ~2 s; close it: originals back
+- [ ] Kill Lumen while a profile is active, start Lumen: original settings restored
+- [ ] Settings → Performance: install PawnIO + IntelMSR.bin, enable helper (one UAC prompt) → status shows CPU, range, lock state
+- [ ] Power tab: TDP slider/presets change "Limit read back" and the measured package power under load; presets outside the range are disabled with a reason
+- [ ] Smart Power: preview lists exactly what will change; Apply reports applied/skipped; estimate appears on battery
+- [ ] Battery tab: discharge watts, capacity, health, estimate
+- [ ] System tab: Sleep (screen off, wakes back into Lumen), Hibernate (if enabled), Restart/Shut down need two presses, Restart Lumen, Task Manager
+- [ ] Wake from sleep: controller responds within ~1 s; log shows "Resume: input ready … first frame …"; no fullscreen flicker; TDP/profile still applied
+- [ ] Lock (Win+L) and unlock: controller works immediately
+- [ ] Restart Lumen / reboot: same tab, same game focused
+
 **Touch & scaling**
 - [ ] Tap tiles to launch, swipe shelves/grid, tap toggles/sliders – all hit targets ≥ 48 epx
 - [ ] Check at 125 %, 150 %, 175 % scaling: no clipped text, top bar fits
