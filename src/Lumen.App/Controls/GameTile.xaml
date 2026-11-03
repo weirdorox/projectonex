@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Lumen.App.Controls.GameTile"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Width="{StaticResource TileWidth}"
+    Height="{StaticResource TileHeight}">
+
+    <Button x:Name="TileButton"
+            Style="{StaticResource GameTileButtonStyle}"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Click="OnClick"
+            GotFocus="OnGotFocus"
+            LostFocus="OnLostFocus"
+            AutomationProperties.Name="{x:Bind ViewModel.Title, Mode=OneWay}">
+        <Grid>
+            <!-- Placeholder when no artwork exists -->
+            <Grid Background="{x:Bind ViewModel.PlaceholderBrush, Mode=OneWay}"
+                  Visibility="{x:Bind ViewModel.PlaceholderVisibility, Mode=OneWay}">
+                <TextBlock Text="{x:Bind ViewModel.Initials, Mode=OneWay}"
+                           FontSize="56" FontWeight="Bold" Opacity="0.35"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="White" />
+            </Grid>
+
+            <Image Source="{x:Bind ViewModel.Cover, Mode=OneWay}"
+                   Visibility="{x:Bind ViewModel.CoverVisibility, Mode=OneWay}"
+                   Stretch="UniformToFill" />
+
+            <!-- Title caption: always for placeholders, on focus for artwork tiles -->
+            <Grid x:Name="Caption" VerticalAlignment="Bottom" Padding="12,28,12,12"
+                  Background="{StaticResource LumenTileCaptionBrush}">
+                <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}"
+                           FontSize="15" FontWeight="SemiBold" Foreground="White"
+                           TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+            </Grid>
+
+            <!-- Favorite badge -->
+            <Border Visibility="{x:Bind ViewModel.FavoriteVisibility, Mode=OneWay}"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8"
+                    Width="30" Height="30" CornerRadius="15"
+                    Background="#CC0A0C11">
+                <FontIcon Glyph="&#xE735;" FontSize="14" Foreground="{StaticResource LumenAccentBrush}" />
+            </Border>
+        </Grid>
+    </Button>
+</UserControl>

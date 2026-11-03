@@ -1,0 +1,11 @@
+bin/
+obj/
+artifacts/
+.vs/
+*.user
+*.suo
+*.msix
+*.appx
+AppPackages/
+BundleArtifacts/
+TestResults/

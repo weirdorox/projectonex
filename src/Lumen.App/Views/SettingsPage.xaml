@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Lumen.App.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    NavigationCacheMode="Required"
+    Background="Transparent">
+
+    <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled">
+        <StackPanel Padding="48,8,48,48" Spacing="22" MaxWidth="980" HorizontalAlignment="Left">
+
+            <!-- ================= Console mode ================= -->
+            <TextBlock Text="Console mode" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="14">
+                    <ToggleSwitch x:Name="StartupToggle" Header="Start Lumen when I sign in" Toggled="OnStartupToggled" />
+                    <TextBlock x:Name="StartupStatusText" Style="{StaticResource LumenCaptionText}" />
+                    <ToggleSwitch x:Name="FullscreenToggle" Header="Fullscreen console mode" Toggled="OnFullscreenToggled" />
+                    <ToggleSwitch x:Name="MinimizeToggle" Header="Minimize Lumen while a game is running" Toggled="OnMinimizeToggled" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Automatic sign-in (optional)" Style="{StaticResource LumenSectionHeader}" Margin="0" />
+                    <TextBlock x:Name="AutoSignInStatusText" Style="{StaticResource LumenBodyText}" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}"
+                               Text="Lumen never stores or changes your password. Automatic sign-in is set up with Microsoft's own tools: Sysinternals Autologon (stores the password encrypted) or the User Accounts dialog. Anyone who picks up the device will be signed in to your account; BitLocker and other protections stay on. You can turn it off again at any time here or with the Lumen Recovery tool." />
+                    <TextBlock x:Name="HelloOnlyText" Style="{StaticResource LumenCaptionText}" Foreground="{StaticResource LumenWarnBrush}" Visibility="Collapsed"
+                               Text="&quot;For improved security, only allow Windows Hello sign-in&quot; is on. Turn it off in Sign-in options before using User Accounts, otherwise the auto sign-in checkbox is hidden." />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Get Sysinternals Autologon" Click="OnAutologonClick" />
+                        <Button Content="User Accounts (netplwiz)" Click="OnNetplwizClick" />
+                        <Button Content="Sign-in options" Click="OnSignInOptionsClick" />
+                    </StackPanel>
+                    <Button x:Name="DisableAutoSignInButton" Content="Turn off automatic sign-in…" Click="OnDisableAutoSignInClick" />
+                </StackPanel>
+            </Border>
+
+            <!-- ================= Library ================= -->
+            <TextBlock Text="Library" Style="{StaticResource LumenSectionHeader}" FontSize="24" Margin="0,12,0,0" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Game folders" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}"
+                               Text="Each sub-folder is treated as one game. Drop a cover.jpg into a game's folder to give it artwork." />
+                    <StackPanel x:Name="FoldersPanel" Spacing="8" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Add folder…" Click="OnAddFolderClick" />
+                        <Button x:Name="ScanButton" Content="Scan now" Style="{StaticResource LumenAccentButtonStyle}" Click="OnScanClick" />
+                    </StackPanel>
+                    <TextBlock x:Name="ScanResultText" Style="{StaticResource LumenCaptionText}" />
+                    <ToggleSwitch x:Name="OnlineArtToggle" Header="Download missing Steam artwork from Steam's servers" Toggled="OnOnlineArtToggled" />
+                    <ToggleSwitch x:Name="GalaxyToggle" Header="Launch GOG games through GOG Galaxy (cloud saves)" Toggled="OnGalaxyToggled" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}" Text="Library source changes apply after Lumen restarts." />
+                </StackPanel>
+            </Border>
+
+            <!-- ================= Device ================= -->
+            <TextBlock Text="Device" Style="{StaticResource LumenSectionHeader}" FontSize="24" Margin="0,12,0,0" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="10">
+                    <TextBlock x:Name="DeviceText" Style="{StaticResource LumenBodyText}" IsTextSelectionEnabled="True" />
+                    <TextBlock x:Name="ProfileText" Style="{StaticResource LumenCaptionText}" />
+                    <StackPanel x:Name="FeaturesPanel" Spacing="6" />
+                </StackPanel>
+            </Border>
+
+            <!-- ================= Troubleshooting ================= -->
+            <TextBlock Text="Troubleshooting" Style="{StaticResource LumenSectionHeader}" FontSize="24" Margin="0,12,0,0" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Style="{StaticResource LumenCaptionText}" FontSize="15">
+                        <Run Text="Ways back to the Windows desktop, always available:" />
+                        <LineBreak /><Run Text="• The Desktop button in the top bar" />
+                        <LineBreak /><Run Text="• Quick access (View + Menu) → Windows desktop" />
+                        <LineBreak /><Run Text="• Hold View + Menu + LB + RB for 3 seconds" />
+                        <LineBreak /><Run Text="• Ctrl + Alt + Home brings Lumen back; Ctrl + Alt + Del and Alt + Tab always work" />
+                        <LineBreak /><Run Text="• Start menu → Lumen Recovery" />
+                    </TextBlock>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Open log folder" Click="OnLogsClick" />
+                        <Button x:Name="RestoreButton" Content="Restore normal Windows startup" Click="OnRestoreClick" />
+                        <Button Content="Exit Lumen" Click="OnExitClick" />
+                    </StackPanel>
+                    <TextBlock x:Name="TroubleshootText" Style="{StaticResource LumenCaptionText}" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock x:Name="AboutText" Style="{StaticResource LumenCaptionText}" Margin="0,12,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

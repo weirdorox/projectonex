@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Lumen.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Lumen">
+
+    <Grid x:Name="RootGrid" Background="{StaticResource LumenBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== Top bar ===== -->
+        <Grid Grid.Row="0" Padding="40,16,40,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <Ellipse Width="12" Height="12" Fill="{StaticResource LumenAccentBrush}" />
+                <TextBlock Text="LUMEN" FontSize="16" FontWeight="Bold" CharacterSpacing="320"
+                           Foreground="{StaticResource LumenTextBrush}" VerticalAlignment="Center" />
+                <Border x:Name="SafeModeBadge" Visibility="Collapsed" Background="{StaticResource LumenWarnBrush}"
+                        CornerRadius="6" Padding="8,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="SAFE MODE" FontSize="12" FontWeight="Bold" Foreground="{StaticResource LumenBackgroundBrush}" />
+                </Border>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Text="LB" FontSize="12" FontWeight="Bold" Foreground="{StaticResource LumenTextDimBrush}"
+                           VerticalAlignment="Center" Margin="0,0,8,0" />
+                <Button x:Name="HomeTab" Content="Home" Style="{StaticResource LumenTabButtonStyle}" Click="OnTabClick" Tag="0" />
+                <Button x:Name="LibraryTab" Content="Library" Style="{StaticResource LumenTabButtonStyle}" Click="OnTabClick" Tag="1" />
+                <Button x:Name="SettingsTab" Content="Settings" Style="{StaticResource LumenTabButtonStyle}" Click="OnTabClick" Tag="2" />
+                <TextBlock Text="RB" FontSize="12" FontWeight="Bold" Foreground="{StaticResource LumenTextDimBrush}"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="18" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <FontIcon x:Name="ControllerIcon" Glyph="&#xE7FC;" FontSize="18" Foreground="{StaticResource LumenTextDimBrush}"
+                          ToolTipService.ToolTip="Controller" />
+                <StackPanel x:Name="BatteryPanel" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <FontIcon x:Name="BatteryIcon" Glyph="&#xE83F;" FontSize="18" Foreground="{StaticResource LumenTextBrush}" />
+                    <TextBlock x:Name="BatteryText" FontSize="16" Foreground="{StaticResource LumenTextBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock x:Name="ClockText" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource LumenTextBrush}"
+                           VerticalAlignment="Center" />
+                <Button x:Name="DesktopButton" Click="OnDesktopClick" Padding="12,8"
+                        ToolTipService.ToolTip="Switch to the Windows desktop"
+                        AutomationProperties.Name="Switch to the Windows desktop">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE7F4;" FontSize="16" />
+                        <TextBlock Text="Desktop" FontSize="15" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== Page content ===== -->
+        <Frame x:Name="ContentFrame" Grid.Row="1" IsNavigationStackEnabled="False" />
+
+        <!-- ===== Button legend ===== -->
+        <Grid Grid.Row="2" Padding="40,8,40,16">
+            <TextBlock x:Name="StatusText" Style="{StaticResource LumenCaptionText}" VerticalAlignment="Center" />
+            <StackPanel x:Name="HintPanel" Orientation="Horizontal" Spacing="22" HorizontalAlignment="Right" />
+        </Grid>
+
+        <!-- ===== Toast ===== -->
+        <Border x:Name="Toast" Grid.Row="1" Visibility="Collapsed"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="24"
+                Background="{StaticResource LumenSurfaceHighBrush}" BorderBrush="{StaticResource LumenStrokeBrush}"
+                BorderThickness="1" CornerRadius="14" Padding="20,12">
+            <TextBlock x:Name="ToastText" FontSize="16" Foreground="{StaticResource LumenTextBrush}" TextWrapping="Wrap" MaxWidth="640" />
+        </Border>
+    </Grid>
+</Window>

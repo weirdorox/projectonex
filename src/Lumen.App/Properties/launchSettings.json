@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "Lumen (windowed)": {
+      "commandName": "Project",
+      "commandLineArgs": "--windowed"
+    },
+    "Lumen (console mode)": {
+      "commandName": "Project",
+      "commandLineArgs": "--autostart"
+    },
+    "Lumen (safe mode)": {
+      "commandName": "Project",
+      "commandLineArgs": "--safe-mode"
+    }
+  }
+}
