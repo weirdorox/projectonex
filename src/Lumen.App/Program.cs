@@ -29,7 +29,7 @@ public static class Program
 
         main.Activated += (_, e) => App.OnRedirectedActivation(e);
 
-        Application.Start(_ =>
+        Application.Start(p =>
         {
             var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
             SynchronizationContext.SetSynchronizationContext(context);
