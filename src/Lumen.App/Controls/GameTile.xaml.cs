@@ -1,7 +1,9 @@
 using System.Numerics;
+using Lumen.App.Services;
 using Lumen.App.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 namespace Lumen.App.Controls;
 
@@ -11,8 +13,8 @@ namespace Lumen.App.Controls;
 /// </summary>
 public sealed partial class GameTile : UserControl
 {
-    /// <summary>Global switch for focus animations (turned off on low battery).</summary>
-    public static bool AnimationsEnabled { get; set; } = true;
+    /// <summary>One shadow instance shared by all tiles (only the focused tile is lifted).</summary>
+    private static readonly ThemeShadow LiftShadow = new();
 
     public GameTile()
     {
@@ -39,9 +41,15 @@ public sealed partial class GameTile : UserControl
 
     private void OnGotFocus(object sender, RoutedEventArgs e)
     {
-        TileButton.ScaleTransition = AnimationsEnabled ? new Vector3Transition { Duration = TimeSpan.FromMilliseconds(140) } : null;
+        TileButton.ScaleTransition = Motion.Vector(160);
+        TileButton.TranslationTransition = Motion.Vector(160);
         TileButton.CenterPoint = new Vector3((float)TileButton.ActualWidth / 2f, (float)TileButton.ActualHeight / 2f, 0f);
         TileButton.Scale = new Vector3(1.07f, 1.07f, 1f);
+        if (Motion.Enabled)
+        {
+            TileButton.Shadow = LiftShadow;
+            TileButton.Translation = new Vector3(0f, -4f, 28f); // lift towards the viewer
+        }
         Canvas.SetZIndex(this, 1);
         UpdateCaption(focused: true);
         if (ViewModel is not null) TileFocused?.Invoke(this, ViewModel);
@@ -50,6 +58,8 @@ public sealed partial class GameTile : UserControl
     private void OnLostFocus(object sender, RoutedEventArgs e)
     {
         TileButton.Scale = Vector3.One;
+        TileButton.Translation = Vector3.Zero;
+        TileButton.Shadow = null;
         Canvas.SetZIndex(this, 0);
         UpdateCaption(focused: false);
     }

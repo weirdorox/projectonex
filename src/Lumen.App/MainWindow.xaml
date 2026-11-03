@@ -69,6 +69,22 @@
             <StackPanel x:Name="HintPanel" Orientation="Horizontal" Spacing="22" HorizontalAlignment="Right" />
         </Grid>
 
+        <!-- ===== Launch curtain (covers everything while a game starts) ===== -->
+        <Grid x:Name="LaunchCurtain" Grid.RowSpan="3" Visibility="Collapsed" Opacity="0"
+              Background="{StaticResource LumenBackgroundBrush}">
+            <Image x:Name="CurtainArt" Stretch="UniformToFill" Opacity="0.7" />
+            <Rectangle Fill="{StaticResource LumenHeroScrimBrush}" />
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="22" MaxWidth="900">
+                <Image x:Name="CurtainLogo" MaxHeight="150" MaxWidth="620" Stretch="Uniform" Visibility="Collapsed" />
+                <TextBlock x:Name="CurtainTitle" Style="{StaticResource LumenDisplayText}" FontSize="48"
+                           HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+                <ProgressRing x:Name="CurtainRing" IsActive="False" Width="44" Height="44"
+                              Foreground="{StaticResource LumenAccentBrush}" HorizontalAlignment="Center" />
+                <TextBlock x:Name="CurtainStatus" Style="{StaticResource LumenCaptionText}" FontSize="16"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
         <!-- ===== Toast ===== -->
         <Border x:Name="Toast" Grid.Row="1" Visibility="Collapsed"
                 HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="24"

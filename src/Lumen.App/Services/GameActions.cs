@@ -21,11 +21,12 @@ public static class GameActions
 
         try
         {
-            shell.ShowToast($"Starting {tile.Title}…");
+            shell.ShowLaunchCurtain(tile);
             var result = await shell.Library.LaunchAsync(tile.Game);
             if (!result.Success)
             {
                 _lastLaunchId = null;
+                shell.HideLaunchCurtain(animate: true);
                 shell.ShowToast($"Couldn't start {tile.Title}: {result.Error}");
                 return;
             }
@@ -36,6 +37,7 @@ public static class GameActions
         catch (Exception ex)
         {
             _lastLaunchId = null;
+            shell.HideLaunchCurtain(animate: true);
             Log.Error($"Launching {tile.Title} failed.", ex);
             shell.ShowToast($"Couldn't start {tile.Title}.");
         }

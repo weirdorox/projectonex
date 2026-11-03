@@ -13,4 +13,14 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      GHSA-2m69-gcr7-jv3q / CVE-2025-6965: SQLite < 3.50.2 bundled by SQLitePCLRaw <= 2.1.11; no patched
+      NuGet build exists yet. Exploitation requires attacker-controlled SQL. Lumen only executes its own
+      parameterised statements against its own local database, so the issue is not reachable.
+      Remove this suppression as soon as a patched SQLitePCLRaw is available.
+    -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+  </ItemGroup>
 </Project>

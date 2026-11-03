@@ -43,6 +43,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
 
         _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        ArtworkService.Initialize(host.Paths, DispatcherQueue);
         Library = new LibraryStore(host, DispatcherQueue);
 
         // ---- window chrome ----
@@ -211,8 +212,15 @@ public sealed partial class MainWindow : Window
     {
         index = Math.Clamp(index, 0, TabPages.Length - 1);
         if (index == _tab && ContentFrame.Content is not SafeModePage) { CurrentPage?.FocusDefault(); return; }
+        // Slide in the direction of travel (LB = from left, RB = from right).
+        NavigationTransitionInfo transition = Motion.Enabled && _tab >= 0
+            ? new SlideNavigationTransitionInfo
+            {
+                Effect = index > _tab ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft,
+            }
+            : new SuppressNavigationTransitionInfo();
         _tab = index;
-        ContentFrame.Navigate(TabPages[index], null, new SuppressNavigationTransitionInfo());
+        ContentFrame.Navigate(TabPages[index], null, transition);
         UpdateTabs();
         UpdateHints();
     }
@@ -260,6 +268,13 @@ public sealed partial class MainWindow : Window
 
     private void OnAction(NavAction action)
     {
+        // While the launch curtain is up, only B (dismiss) does anything.
+        if (LaunchCurtain.Visibility == Visibility.Visible)
+        {
+            if (action == NavAction.Back) HideLaunchCurtain(animate: true);
+            return;
+        }
+
         if (_overlay?.IsOpen == true && DesktopSwitcher.IsForeground(_overlay.Hwnd))
         {
             _overlay.HandleAction(action);
@@ -333,7 +348,7 @@ public sealed partial class MainWindow : Window
 
         var profile = PowerPolicy.Choose(status);
         _navigator.SetProfile(profile);
-        GameTile.AnimationsEnabled = profile.AnimationsEnabled;
+        Motion.PowerAllows = profile.AnimationsEnabled;
     }
 
     private void UpdateControllerIcon()
@@ -350,6 +365,82 @@ public sealed partial class MainWindow : Window
         UpdateBattery();
         UpdateControllerIcon();
         if (_wantFullscreen && DesktopSwitcher.IsForeground(_hwnd)) ApplyPresenter();
+    }
+
+    // =====================================================================================
+    // Launch curtain
+    // =====================================================================================
+
+    private DispatcherQueueTimer? _curtainTimeout;
+    private DispatcherQueueTimer? _curtainCollapse;
+
+    /// <summary>
+    /// Full-screen "starting" moment: the game's art slowly zooms behind its logo/title until the game
+    /// window takes the foreground (or 20 s pass, or B is pressed).
+    /// </summary>
+    public void ShowLaunchCurtain(ViewModels.GameTileViewModel tile)
+    {
+        _curtainCollapse?.Stop();
+        var service = ArtworkService.Instance;
+        CurtainArt.Source = ViewModels.GameTileViewModel.CreateBitmap(service?.Cache.TryGetLocal(tile.HeroPath) ?? service?.Cache.TryGetLocal(tile.Game.EffectiveCover), 1280);
+        var logo = ViewModels.GameTileViewModel.CreateBitmap(tile.LogoPath, 1100);
+        CurtainLogo.Source = logo;
+        CurtainLogo.Visibility = logo is null ? Visibility.Collapsed : Visibility.Visible;
+        CurtainTitle.Text = tile.Title;
+        CurtainTitle.Visibility = logo is null ? Visibility.Visible : Visibility.Collapsed;
+        CurtainStatus.Text = $"Starting via {tile.SourceLabel}…";
+
+        CurtainArt.ScaleTransition = null;
+        CurtainArt.Scale = System.Numerics.Vector3.One;
+        LaunchCurtain.OpacityTransition = Motion.Fade(260);
+        LaunchCurtain.Opacity = 0;
+        LaunchCurtain.Visibility = Visibility.Visible;
+        CurtainRing.IsActive = true;
+        DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+        {
+            LaunchCurtain.Opacity = 1;
+            if (Motion.Enabled)
+            {
+                CurtainArt.CenterPoint = new System.Numerics.Vector3((float)LaunchCurtain.ActualWidth / 2f, (float)LaunchCurtain.ActualHeight / 2f, 0f);
+                CurtainArt.ScaleTransition = new Microsoft.UI.Xaml.Vector3Transition { Duration = TimeSpan.FromSeconds(6) };
+                CurtainArt.Scale = new System.Numerics.Vector3(1.1f, 1.1f, 1f);
+            }
+        });
+
+        _curtainTimeout ??= CreateOneShot(TimeSpan.FromSeconds(20), () => HideLaunchCurtain(animate: true));
+        _curtainTimeout.Stop();
+        _curtainTimeout.Start();
+    }
+
+    public void HideLaunchCurtain(bool animate)
+    {
+        _curtainTimeout?.Stop();
+        if (LaunchCurtain.Visibility != Visibility.Visible) return;
+        LaunchCurtain.OpacityTransition = animate ? Motion.Fade(240) : null;
+        LaunchCurtain.Opacity = 0;
+        _curtainCollapse ??= CreateOneShot(TimeSpan.FromMilliseconds(300), () =>
+        {
+            if (LaunchCurtain.Opacity > 0) return; // re-shown meanwhile
+            LaunchCurtain.Visibility = Visibility.Collapsed;
+            CurtainRing.IsActive = false; // no spinner work while hidden
+            CurtainArt.Source = null;
+            CurtainLogo.Source = null;
+        });
+        _curtainCollapse.Stop();
+        _curtainCollapse.Start();
+    }
+
+    private DispatcherQueueTimer CreateOneShot(TimeSpan delay, Action action)
+    {
+        var t = DispatcherQueue.CreateTimer();
+        t.Interval = delay;
+        t.IsRepeating = false;
+        t.Tick += (_, _) =>
+        {
+            try { action(); }
+            catch (Exception ex) { Log.Error("Timer action failed.", ex); }
+        };
+        return t;
     }
 
     // =====================================================================================
@@ -385,7 +476,12 @@ public sealed partial class MainWindow : Window
 
     private void OnActivated(object sender, WindowActivatedEventArgs args)
     {
-        if (args.WindowActivationState == WindowActivationState.Deactivated) return;
+        if (args.WindowActivationState == WindowActivationState.Deactivated)
+        {
+            // The game (or its launcher) took the foreground: the curtain has done its job.
+            if (LaunchCurtain.Visibility == Visibility.Visible) HideLaunchCurtain(animate: false);
+            return;
+        }
         UpdateClock();
         UpdateBattery();
     }

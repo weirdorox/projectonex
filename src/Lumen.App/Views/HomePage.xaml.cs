@@ -16,12 +16,21 @@ public sealed partial class HomePage : Page, IShellPage
 {
     private readonly Dictionary<ItemsRepeater, string> _shelfKeys = new();
     private IReadOnlyList<ButtonHint>? _hints;
-    private string? _backdropKey;
     private bool _hadGames;
+    private GameTileViewModel? _pendingHero;
+    private GameTileViewModel? _shownHero;
+    private readonly DispatcherQueueTimer _heroTimer;
+
+    /// <summary>Focus must rest this long before heavy artwork work starts (fast scrolling stays smooth).</summary>
+    private static readonly TimeSpan HeroSettle = TimeSpan.FromMilliseconds(140);
 
     public HomePage()
     {
         InitializeComponent();
+        _heroTimer = DispatcherQueue.CreateTimer();
+        _heroTimer.IsRepeating = false;
+        _heroTimer.Interval = HeroSettle;
+        _heroTimer.Tick += (_, _) => _ = ApplyHeroAsync();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
@@ -72,8 +81,11 @@ public sealed partial class HomePage : Page, IShellPage
         {
             HeroTitle.Text = Shell.Library.IsScanning ? "Looking for games…" : "Welcome to Lumen";
             HeroMeta.Text = string.Empty;
-            Backdrop.Source = null;
-            _backdropKey = null;
+            HeroLogo.Visibility = Visibility.Collapsed;
+            HeroTitle.Visibility = Visibility.Visible;
+            Stage.Show(null);
+            Stage.SetTint(null);
+            _shownHero = null;
         }
     }
 
@@ -116,12 +128,54 @@ public sealed partial class HomePage : Page, IShellPage
 
     private void OnTileFocused(object? sender, GameTileViewModel vm)
     {
+        // Text is cheap and updates instantly; artwork waits until focus settles.
         HeroTitle.Text = vm.Title;
         HeroMeta.Text = vm.Subtitle;
+        _pendingHero = vm;
+        _heroTimer.Stop();
+        _heroTimer.Start();
+    }
+
+    /// <summary>Cross-fades backdrop, logo and colour wash to the settled game.</summary>
+    private async Task ApplyHeroAsync()
+    {
+        var vm = _pendingHero;
+        if (vm is null || vm == _shownHero) return;
+        _shownHero = vm;
+
+        // Logo replaces the title text when the store provides one.
+        var logo = GameTileViewModel.CreateBitmap(vm.LogoPath, 880);
+        HeroLogo.OpacityTransition = null;
+        HeroLogo.Opacity = 0;
+        if (logo is not null)
+        {
+            logo.ImageOpened += (_, _) =>
+            {
+                if (_shownHero != vm) return;
+                HeroLogo.OpacityTransition = Motion.Fade(300);
+                HeroLogo.Opacity = 1;
+            };
+            HeroLogo.Source = logo;
+            HeroLogo.Visibility = Visibility.Visible;
+            HeroTitle.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            HeroLogo.Source = null;
+            HeroLogo.Visibility = Visibility.Collapsed;
+            HeroTitle.Visibility = Visibility.Visible;
+        }
+
+        var service = ArtworkService.Instance;
         var key = vm.HeroPath;
-        if (key == _backdropKey) return;
-        _backdropKey = key;
-        Backdrop.Source = GameTileViewModel.CreateBitmap(key, 1280);
+        var local = service?.Cache.TryGetLocal(key);
+        if (local is null && service is not null && key is not null)
+            local = await service.Cache.ResolveAsync(key); // remote art: download once, then cached
+        if (_shownHero != vm) return;
+
+        Stage.Show(local);
+        var accent = service is null ? null : await service.GetAccentAsync(service.Cache.TryGetLocal(vm.Game.EffectiveCover) ?? local);
+        if (_shownHero == vm) Stage.SetTint(accent);
     }
 
     // ---------------- controller ----------------

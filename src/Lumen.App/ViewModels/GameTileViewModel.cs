@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Lumen.App.Services;
+using Lumen.Core.Artwork;
 using Lumen.Core.Models;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -75,8 +77,12 @@ public sealed class GameTileViewModel : ObservableObject
     public Brush PlaceholderBrush { get; }
     public string Initials => MakeInitials(_game.Title);
 
-    /// <summary>Wide artwork for the home backdrop (falls back to the cover).</summary>
+    /// <summary>Wide artwork for the home backdrop (falls back to the cover). May be a remote URI.</summary>
     public string? HeroPath => _game.Artwork.Hero ?? _game.EffectiveCover;
+
+    /// <summary>Transparent title logo (local files only, e.g. Steam's logo.png).</summary>
+    public string? LogoPath =>
+        _game.Artwork.Logo is { } logo && !ArtworkCache.IsRemote(logo) && File.Exists(logo) ? logo : null;
 
     public void Update(GameEntry game)
     {
@@ -91,7 +97,29 @@ public sealed class GameTileViewModel : ObservableObject
         var key = _game.EffectiveCover;
         if (key == _coverKey) return;
         _coverKey = key;
-        _cover = CreateBitmap(key, DecodeWidth);
+
+        // Local file or already-cached remote art: show immediately.
+        var service = ArtworkService.Instance;
+        var local = service?.Cache.TryGetLocal(key) ?? (ArtworkCache.IsRemote(key) ? null : key);
+        _cover = CreateBitmap(local, DecodeWidth);
+
+        // Remote art not cached yet: keep the placeholder, download once in the background.
+        if (_cover is null && service is not null && ArtworkCache.IsRemote(key))
+            _ = LoadRemoteCoverAsync(service, key!);
+    }
+
+    private async Task LoadRemoteCoverAsync(ArtworkService service, string key)
+    {
+        var path = await service.Cache.ResolveAsync(key).ConfigureAwait(false);
+        if (path is null) return;
+        service.Ui.TryEnqueue(() =>
+        {
+            if (_coverKey != key) return; // game changed meanwhile
+            _cover = CreateBitmap(path, DecodeWidth);
+            OnPropertyChanged(nameof(Cover));
+            OnPropertyChanged(nameof(CoverVisibility));
+            OnPropertyChanged(nameof(PlaceholderVisibility));
+        });
     }
 
     public static BitmapImage? CreateBitmap(string? pathOrUri, int decodeWidth)

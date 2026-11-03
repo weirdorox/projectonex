@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Full-bleed backdrop for the focused game: two image layers that cross-fade, a slow scale drift,
+  and a colour wash taken from the artwork. Purely decorative and never hit-testable.
+-->
+<UserControl
+    x:Class="Lumen.App.Controls.HeroStage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsHitTestVisible="False"
+    IsTabStop="False">
+
+    <Grid x:Name="Root" Background="{StaticResource LumenBackgroundBrush}">
+        <Image x:Name="LayerA" Stretch="UniformToFill" VerticalAlignment="Top" Opacity="0" />
+        <Image x:Name="LayerB" Stretch="UniformToFill" VerticalAlignment="Top" Opacity="0" />
+        <Grid x:Name="TintLayer" Background="{StaticResource LumenBackgroundBrush}" Opacity="0.45" />
+        <Rectangle Fill="{StaticResource LumenHeroScrimBrush}" />
+        <Rectangle Fill="{StaticResource LumenHeroSideScrimBrush}" />
+    </Grid>
+</UserControl>

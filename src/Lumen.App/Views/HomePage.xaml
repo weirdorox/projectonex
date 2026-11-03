@@ -14,10 +14,8 @@
     </Page.Resources>
 
     <Grid>
-        <!-- Backdrop: focused game's hero art, faded into the background -->
-        <Image x:Name="Backdrop" Stretch="UniformToFill" VerticalAlignment="Top" Opacity="0.55" />
-        <Rectangle Fill="{StaticResource LumenHeroScrimBrush}" />
-        <Rectangle Fill="{StaticResource LumenHeroSideScrimBrush}" />
+        <!-- Backdrop: cross-fading hero art + colour wash of the focused game -->
+        <controls:HeroStage x:Name="Stage" />
 
         <ScrollViewer x:Name="Scroller"
                       VerticalScrollBarVisibility="Hidden"
@@ -26,7 +24,9 @@
             <StackPanel Padding="48,8,0,40" Spacing="30">
 
                 <!-- Hero text for the focused game -->
-                <StackPanel Spacing="6" Margin="0,24,48,0" MinHeight="120">
+                <StackPanel x:Name="HeroInfo" Spacing="6" Margin="0,24,48,0" MinHeight="120">
+                    <Image x:Name="HeroLogo" MaxHeight="104" MaxWidth="440" Stretch="Uniform"
+                           HorizontalAlignment="Left" Visibility="Collapsed" />
                     <TextBlock x:Name="HeroTitle" Style="{StaticResource LumenDisplayText}" Text="Welcome" />
                     <TextBlock x:Name="HeroMeta" Style="{StaticResource LumenCaptionText}" FontSize="16" />
                 </StackPanel>
