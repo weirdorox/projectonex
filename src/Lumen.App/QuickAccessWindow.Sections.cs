@@ -27,8 +27,8 @@ public sealed partial class QuickAccessWindow
     private bool _radiosProbed;
 
     /// <summary>The game the panel acts on, when one was recognised.</summary>
-    public GameEntry? TargetGame => _targetGame;
-    public ProcessInfo? TargetProcess => _target;
+    internal GameEntry? TargetGame => _targetGame;
+    internal ProcessInfo? TargetProcess => _target;
 
     /// <summary>
     /// Remembers what was in the foreground *before* the panel opened - that is the game the user
