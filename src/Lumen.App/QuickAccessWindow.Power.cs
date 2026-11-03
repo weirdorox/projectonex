@@ -118,7 +118,7 @@ public sealed partial class QuickAccessWindow
 
     private void OnTdpSliderChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_powerUpdating) return;
+        if (_powerUpdating || TdpValueText is null) return;
         TdpValueText.Text = $"{e.NewValue:0} W";
         _tdpDebounce ??= CreateDebounce(TimeSpan.FromMilliseconds(450), () => _ = ApplyTdpAsync(Math.Round(TdpSlider.Value)));
         _tdpDebounce.Stop();
@@ -151,9 +151,11 @@ public sealed partial class QuickAccessWindow
 
     // ---------------- Smart Power ----------------
 
+    private bool _hwReadyForSmart => IsOpen; // not while the XAML is loading
+
     private async void OnSmartChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_powerUpdating) return;
+        if (_powerUpdating || _hwReadyForSmart is false) return;
         await RenderSmartPreviewAsync();
     }
 

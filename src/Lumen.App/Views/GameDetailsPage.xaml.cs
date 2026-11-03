@@ -217,7 +217,7 @@ public sealed partial class GameDetailsPage : Page, IShellPage
 
     private void OnBrightnessChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_loading || !BrightnessToggle.IsOn) return;
+        if (_loading || _brightnessSave is null || BrightnessToggle is null || !BrightnessToggle.IsOn) return;
         _brightnessSave.Stop();
         _brightnessSave.Start();
     }

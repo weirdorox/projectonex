@@ -333,7 +333,7 @@ public sealed partial class QuickAccessWindow : Window
 
     private void OnVolumeChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_updating || _hw?.Volume is not { } vol) return;
+        if (_updating || _hw?.Volume is not { } vol || VolumeValue is null) return;
         try
         {
             vol.SetLevel((float)(e.NewValue / 100.0));
@@ -365,7 +365,8 @@ public sealed partial class QuickAccessWindow : Window
 
     private void OnBrightnessChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_updating) return;
+        // Also raised while the XAML is still loading (Minimum clamps the value) - before the debounce exists.
+        if (_updating || _brightnessDebounce is null || BrightnessValue is null) return;
         BrightnessValue.Text = $"{(int)e.NewValue}%";
         _brightnessDebounce.Stop();
         _brightnessDebounce.Start();
