@@ -55,6 +55,14 @@
                 </StackPanel>
                 <TextBlock x:Name="ClockText" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource LumenTextBrush}"
                            VerticalAlignment="Center" />
+                <Button x:Name="QuickSettingsButton" Click="OnQuickSettingsClick" Padding="12,8"
+                        ToolTipService.ToolTip="Quick settings: brightness, HDR, sound, Wi-Fi, power (≡ on the controller)"
+                        AutomationProperties.Name="Quick settings">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE9E9;" FontSize="16" />
+                        <TextBlock Text="Quick settings" FontSize="15" />
+                    </StackPanel>
+                </Button>
                 <Button x:Name="DesktopButton" Click="OnDesktopClick" Padding="12,8"
                         ToolTipService.ToolTip="Switch to the Windows desktop"
                         AutomationProperties.Name="Switch to the Windows desktop">

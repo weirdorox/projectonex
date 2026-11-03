@@ -9,6 +9,22 @@
     <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled">
         <StackPanel Padding="48,8,48,48" Spacing="22" MaxWidth="980" HorizontalAlignment="Left">
 
+            <!-- ================= Display & sound ================= -->
+            <TextBlock Text="Display &amp; sound" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Brightness" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <Slider x:Name="SettingsBrightnessSlider" Minimum="5" Maximum="100" StepFrequency="5" MaxWidth="520" HorizontalAlignment="Left" Width="520"
+                            ValueChanged="OnSettingsBrightnessChanged" AutomationProperties.Name="Brightness" />
+                    <TextBlock x:Name="SettingsBrightnessNote" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" />
+                    <ToggleSwitch x:Name="SettingsHdrToggle" Header="HDR" Toggled="OnSettingsHdrToggled" />
+                    <TextBlock x:Name="SettingsHdrNote" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" />
+                    <Button Content="More: resolution, refresh rate, sound output, microphone, Wi-Fi, power…" Click="OnOpenQuickSettingsClick" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap"
+                               Text="These live in Quick settings so you can reach them in any game: press ≡ (Menu) in Lumen, View + Menu in a game, or the Quick settings button at the top." />
+                </StackPanel>
+            </Border>
+
             <!-- ================= Console mode ================= -->
             <TextBlock Text="Console mode" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
             <Border Style="{StaticResource LumenCardStyle}">

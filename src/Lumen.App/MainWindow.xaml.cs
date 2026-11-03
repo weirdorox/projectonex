@@ -318,6 +318,8 @@ public sealed partial class MainWindow : Window
 
     private void OnDesktopClick(object sender, RoutedEventArgs e) => SwitchToDesktop();
 
+    private void OnQuickSettingsClick(object sender, RoutedEventArgs e) => ToggleQuickAccess();
+
     private void UpdateTabs()
     {
         var accent = (Brush)Application.Current.Resources["LumenAccentBrush"];
