@@ -36,6 +36,13 @@ jobs:
         shell: pwsh
         run: ./scripts/build.ps1 -SkipTests
 
+      - name: Show XAML compiler diagnostics
+        if: failure()
+        shell: pwsh
+        run: |
+          Get-ChildItem src/Lumen.App/obj -Recurse -Filter output.json | ForEach-Object { Write-Host "== $($_.FullName)"; Get-Content $_.FullName }
+          Get-ChildItem src/Lumen.App/obj -Recurse -Filter input.json | Select-Object -First 1 | ForEach-Object { Write-Host "== $($_.FullName)"; Get-Content $_.FullName | Select-Object -First 40 }
+
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --no-progress -y
