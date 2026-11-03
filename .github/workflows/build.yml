@@ -41,7 +41,19 @@ jobs:
         shell: pwsh
         run: |
           Get-ChildItem src/Lumen.App/obj -Recurse -Filter output.json | ForEach-Object { Write-Host "== $($_.FullName)"; Get-Content $_.FullName }
-          Get-ChildItem src/Lumen.App/obj -Recurse -Filter input.json | Select-Object -First 1 | ForEach-Object { Write-Host "== $($_.FullName)"; Get-Content $_.FullName | Select-Object -First 40 }
+          $in = Get-ChildItem src/Lumen.App/obj -Recurse -Filter input.json | Select-Object -First 1
+          $xc = Get-ChildItem "$env:USERPROFILE\.nuget\packages\microsoft.windowsappsdk.winui" -Recurse -Filter XamlCompiler.exe | Where-Object { $_.FullName -match 'net472' } | Select-Object -First 1
+          if ($in -and $xc) {
+            Write-Host "== Running $($xc.FullName) directly"
+            Push-Location src/Lumen.App
+            & $xc.FullName $in.FullName "$($in.DirectoryName)\output.json" 2>&1 | Out-Host
+            Write-Host "exit code: $LASTEXITCODE"
+            if (Test-Path "$($in.DirectoryName)\output.json") { Get-Content "$($in.DirectoryName)\output.json" }
+            Pop-Location
+          }
+          Write-Host "== Full MSBuild (Visual Studio) build for detailed XAML errors"
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | Select-Object -First 1
+          if ($vs) { & $vs src/Lumen.App/Lumen.App.csproj /restore /p:Configuration=Debug /p:Platform=x64 /v:minimal /nologo 2>&1 | Out-Host }
 
       - name: Install Inno Setup
         shell: pwsh
