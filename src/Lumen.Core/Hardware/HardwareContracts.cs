@@ -198,6 +198,9 @@ public sealed class HardwareServices
     public ISystemMonitor? Monitor { get; init; }
     public ITdpControl? Tdp { get; init; }
     public IFanControl? Fan { get; init; }
+    public IResolutionControl? Resolution { get; init; }
+    public IDisplayTopology? Displays { get; init; }
+    public IAudioDevices? Audio { get; init; }
 
     public bool Supports(HardwareFeature f) => f switch
     {

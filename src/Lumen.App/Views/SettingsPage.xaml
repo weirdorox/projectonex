@@ -17,6 +17,7 @@
                     <TextBlock x:Name="StartupStatusText" Style="{StaticResource LumenCaptionText}" />
                     <ToggleSwitch x:Name="FullscreenToggle" Header="Fullscreen console mode" Toggled="OnFullscreenToggled" />
                     <ToggleSwitch x:Name="MinimizeToggle" Header="Minimize Lumen while a game is running" Toggled="OnMinimizeToggled" />
+                    <ToggleSwitch x:Name="DockFollowToggle" Header="Docked mode: move Lumen to an external display when one is connected" Toggled="OnDockFollowToggled" />
                 </StackPanel>
             </Border>
 

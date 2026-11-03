@@ -179,6 +179,8 @@ internal static class NativeMethods
     // Display settings
     public const int ENUM_CURRENT_SETTINGS = -1;
     public const uint DM_DISPLAYFREQUENCY = 0x00400000;
+    public const uint DM_PELSWIDTH = 0x00080000;
+    public const uint DM_PELSHEIGHT = 0x00100000;
     public const uint CDS_UPDATEREGISTRY = 0x00000001;
     public const uint CDS_TEST = 0x00000002;
     public const int DISP_CHANGE_SUCCESSFUL = 0;

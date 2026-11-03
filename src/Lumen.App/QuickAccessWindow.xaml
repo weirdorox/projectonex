@@ -96,6 +96,37 @@
                     <VariableSizedWrapGrid x:Name="RefreshPanel" Orientation="Horizontal" ItemWidth="112" ItemHeight="56" />
                 </StackPanel>
 
+                <!-- Resolution (driver-tested; asks to keep, reverts automatically) -->
+                <StackPanel x:Name="ResolutionSection" Spacing="8" Visibility="Collapsed">
+                    <TextBlock Text="Resolution" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <VariableSizedWrapGrid x:Name="ResolutionPanel" Orientation="Horizontal" ItemWidth="136" ItemHeight="56" />
+                    <StackPanel x:Name="ResolutionConfirm" Spacing="8" Visibility="Collapsed">
+                        <TextBlock x:Name="ResolutionConfirmText" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" />
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="ResolutionKeepButton" Content="Keep" HorizontalAlignment="Stretch" Click="OnResolutionKeepClick" Style="{StaticResource LumenAccentButtonStyle}" />
+                            <Button Grid.Column="1" Content="Revert" HorizontalAlignment="Stretch" Click="OnResolutionRevertClick" />
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- HDR / display state -->
+                <StackPanel x:Name="HdrSection" Spacing="4" Visibility="Collapsed">
+                    <ToggleSwitch x:Name="HdrToggle" Header="HDR" Toggled="OnHdrToggled" />
+                    <TextBlock x:Name="HdrNote" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" />
+                </StackPanel>
+                <TextBlock x:Name="DockText" Style="{StaticResource LumenCaptionText}" />
+
+                <!-- Audio -->
+                <ToggleSwitch x:Name="MicToggle" Header="Microphone muted" Toggled="OnMicToggled" Visibility="Collapsed" />
+                <StackPanel x:Name="OutputSection" Spacing="8" Visibility="Collapsed">
+                    <TextBlock Text="Audio output" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <StackPanel x:Name="OutputPanel" Spacing="8" />
+                </StackPanel>
+
                 <!-- Power plan -->
                 <StackPanel x:Name="PowerSection" Spacing="8">
                     <TextBlock Text="Power plan" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />

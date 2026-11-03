@@ -71,6 +71,7 @@ public sealed partial class MainWindow : Window
         _hook.DisplayChanged += () => DispatcherQueue.TryEnqueue(() =>
         {
             if (_wantFullscreen && DesktopSwitcher.IsForeground(_hwnd)) ApplyPresenter();
+            ScheduleDockCheck();
         });
 
         // ---- controller ----
@@ -609,6 +610,7 @@ public sealed partial class MainWindow : Window
         {
             await Task.Delay(1500); // let the first frame settle
             await _host.Hardware.Value;
+            await EvaluateDockAsync();
         }
         catch (Exception ex)
         {

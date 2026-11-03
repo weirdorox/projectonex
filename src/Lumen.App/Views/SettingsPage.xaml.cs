@@ -46,6 +46,7 @@ public sealed partial class SettingsPage : Page, IShellPage
 
             FullscreenToggle.IsOn = Host.Settings.Fullscreen;
             MinimizeToggle.IsOn = Host.Settings.MinimizeOnLaunch;
+            DockFollowToggle.IsOn = Host.Settings.DockFollowExternal;
             OnlineArtToggle.IsOn = Host.Settings.AllowOnlineArtwork;
             GalaxyToggle.IsOn = Host.Settings.PreferGogGalaxy;
             RenderFolders();
@@ -127,6 +128,12 @@ public sealed partial class SettingsPage : Page, IShellPage
         if (_loading) return;
         Host.Settings.Fullscreen = FullscreenToggle.IsOn;
         Shell.SetFullscreen(FullscreenToggle.IsOn);
+    }
+
+    private void OnDockFollowToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        Host.Settings.DockFollowExternal = DockFollowToggle.IsOn;
     }
 
     private void OnMinimizeToggled(object sender, RoutedEventArgs e)

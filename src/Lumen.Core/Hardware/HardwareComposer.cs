@@ -10,7 +10,10 @@ public sealed record ProviderCandidates(
     IPowerPlanControl? PowerPlans = null,
     ISystemMonitor? Monitor = null,
     ITdpControl? Tdp = null,
-    IFanControl? Fan = null);
+    IFanControl? Fan = null,
+    IResolutionControl? Resolution = null,
+    IDisplayTopology? Displays = null,
+    IAudioDevices? Audio = null);
 
 public static class HardwareComposer
 {
@@ -37,6 +40,10 @@ public static class HardwareComposer
             Monitor = monitorAllowed ? c.Monitor : null,
             Tdp = P(HardwareFeature.TdpControl) ? c.Tdp : null,
             Fan = P(HardwareFeature.FanControl) ? c.Fan : null,
+            // Generic, documented Windows display/audio APIs - not device specific.
+            Resolution = P(HardwareFeature.RefreshRate) ? c.Resolution : null,
+            Displays = c.Displays,
+            Audio = c.Audio,
         };
     }
 }

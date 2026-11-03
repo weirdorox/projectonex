@@ -208,15 +208,14 @@ public sealed partial class QuickAccessWindow : Window
             }
 
             RenderRefreshRates();
+            RenderDisplayAudio();
             RenderPowerPlans();
 
             PerfSection.Visibility = _hw.Monitor is null ? Visibility.Collapsed : Visibility.Visible;
 
-            var unsupported = new[] { HardwareFeature.TdpControl, HardwareFeature.FanControl }
-                .Where(f => !_hw.Supports(f))
-                .Select(f => f == HardwareFeature.TdpControl ? "TDP" : "Fan control");
-            UnsupportedText.Text =
-                $"{string.Join(" and ", unsupported)} are not controlled by Lumen on {_hw.Profile.DisplayName}: there is no documented interface for them. Use the manufacturer's tool if you need them.";
+            UnsupportedText.Text = _hw.Supports(HardwareFeature.FanControl)
+                ? string.Empty
+                : $"Fan control: not available on {_hw.Profile.DisplayName} (no documented interface). TDP: see the Power tab.";
         }
         catch (Exception ex)
         {

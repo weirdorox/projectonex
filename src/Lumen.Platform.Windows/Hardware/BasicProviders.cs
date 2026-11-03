@@ -49,9 +49,46 @@ public sealed class Win32BatteryInfo : IBatteryInfo
     }
 }
 
-/// <summary>Refresh rate of the primary display via EnumDisplaySettings / ChangeDisplaySettingsEx.</summary>
-public sealed class DisplayModeControl : IDisplayModeControl
+/// <summary>Refresh rate and resolution of the primary display via EnumDisplaySettings / ChangeDisplaySettingsEx.</summary>
+public sealed class DisplayModeControl : IDisplayModeControl, IResolutionControl
 {
+    public IReadOnlyList<DisplayMode> GetModes()
+    {
+        var current = DEVMODE.Create();
+        if (!EnumDisplaySettings(null, ENUM_CURRENT_SETTINGS, ref current)) return [];
+        var modes = new HashSet<DisplayMode>();
+        var dm = DEVMODE.Create();
+        for (var i = 0; EnumDisplaySettings(null, i, ref dm); i++)
+        {
+            if (dm.dmBitsPerPel == current.dmBitsPerPel && dm.dmDisplayFrequency > 1)
+                modes.Add(new DisplayMode((int)dm.dmPelsWidth, (int)dm.dmPelsHeight, (int)dm.dmDisplayFrequency));
+            dm = DEVMODE.Create();
+        }
+        return modes.ToList();
+    }
+
+    public bool SetResolution(int width, int height, int? refreshHz = null, bool persist = true)
+    {
+        var dm = DEVMODE.Create();
+        if (!EnumDisplaySettings(null, ENUM_CURRENT_SETTINGS, ref dm)) return false;
+        var hz = refreshHz ?? GetModes().Where(m => m.Width == width && m.Height == height)
+            .Select(m => m.RefreshHz).DefaultIfEmpty((int)dm.dmDisplayFrequency).Max();
+        dm.dmPelsWidth = (uint)width;
+        dm.dmPelsHeight = (uint)height;
+        dm.dmDisplayFrequency = (uint)hz;
+        dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+
+        var test = ChangeDisplaySettingsEx(null, ref dm, IntPtr.Zero, CDS_TEST, IntPtr.Zero);
+        if (test != DISP_CHANGE_SUCCESSFUL)
+        {
+            Log.Warn($"Resolution {width}x{height}@{hz} rejected by driver (test result {test}).");
+            return false;
+        }
+        var rc = ChangeDisplaySettingsEx(null, ref dm, IntPtr.Zero, persist ? CDS_UPDATEREGISTRY : 0, IntPtr.Zero);
+        Log.Info($"Set resolution {width}x{height}@{hz} (persist={persist}): result {rc}.");
+        return rc == DISP_CHANGE_SUCCESSFUL;
+    }
+
     public DisplayMode? GetCurrent()
     {
         var dm = DEVMODE.Create();

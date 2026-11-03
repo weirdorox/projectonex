@@ -92,6 +92,13 @@ public sealed class ShellSettings
         set => _store.Set("shell.lastGame", value);
     }
 
+    /// <summary>When an external display appears (dock/TV), move fullscreen Lumen onto it; back on undock.</summary>
+    public bool DockFollowExternal
+    {
+        get => GetBool("display.dockFollow", true);
+        set => SetBool("display.dockFollow", value);
+    }
+
     public bool FirstRunCompleted
     {
         get => GetBool("shell.firstRunCompleted", false);
