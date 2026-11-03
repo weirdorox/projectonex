@@ -27,7 +27,7 @@ public sealed class LumenDatabase
 
     public string Path { get; }
 
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     public SqliteConnection Open()
     {
@@ -108,6 +108,17 @@ public sealed class LumenDatabase
         CREATE TABLE IF NOT EXISTS settings (
             key   TEXT PRIMARY KEY,
             value TEXT NULL
+        );
+        """,
+        // v2: per-game performance profiles
+        """
+        CREATE TABLE IF NOT EXISTS game_profiles (
+            game_id     TEXT PRIMARY KEY,
+            refresh_hz  INTEGER NULL,
+            power_plan  TEXT NULL,
+            brightness  INTEGER NULL,
+            tdp_watts   INTEGER NULL,
+            updated_at  TEXT NOT NULL
         );
         """,
     ];

@@ -57,6 +57,7 @@ public sealed partial class LibraryPage : Page, IShellPage
     public IReadOnlyList<ButtonHint> Hints => _hints ??=
     [
         ButtonHint.Create("A", "Play"),
+        ButtonHint.Create("X", "Details"),
         ButtonHint.Create("Y", "Favorite"),
         ButtonHint.Create("LT/RT", "Filter"),
         ButtonHint.Create("B", "Home"),
@@ -138,6 +139,10 @@ public sealed partial class LibraryPage : Page, IShellPage
                 return true;
             case NavAction.PreviousSection:
                 SetFilter(_filter - 1);
+                return true;
+            case NavAction.Secondary:
+                if ((FocusNavigation.Focused(XamlRoot) as FrameworkElement)?.DataContext is GameTileViewModel detailsVm)
+                    Shell.ShowGameDetails(detailsVm.Id);
                 return true;
             case NavAction.Tertiary:
                 if ((FocusNavigation.Focused(XamlRoot) as FrameworkElement)?.DataContext is GameTileViewModel vm)

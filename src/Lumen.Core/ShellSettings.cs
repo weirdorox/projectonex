@@ -48,6 +48,16 @@ public sealed class ShellSettings
         set => SetBool("shell.minimizeOnLaunch", value);
     }
 
+    /// <summary>
+    /// JSON of the settings captured before a game profile was applied. Present only while a profile
+    /// session is active, so a crash or power loss mid-game can be repaired on the next start.
+    /// </summary>
+    public string? PendingProfileBaseline
+    {
+        get => _store.Get("profiles.pendingBaseline");
+        set => _store.Set("profiles.pendingBaseline", value);
+    }
+
     public bool FirstRunCompleted
     {
         get => GetBool("shell.firstRunCompleted", false);

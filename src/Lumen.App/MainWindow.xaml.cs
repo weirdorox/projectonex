@@ -45,6 +45,7 @@ public sealed partial class MainWindow : Window
         _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         ArtworkService.Initialize(host.Paths, DispatcherQueue);
         Library = new LibraryStore(host, DispatcherQueue);
+        GameSessions = new GameSessionService(host, this, DispatcherQueue);
 
         // ---- window chrome ----
         Title = "Lumen";
@@ -80,12 +81,20 @@ public sealed partial class MainWindow : Window
         _navigator.Start();
 
         // ---- power: sleep/resume and display on/off ----
-        host.Power.Suspending += (_, _) => DispatcherQueue.TryEnqueue(() => _navigator.Pause());
+        host.Power.Suspending += (_, _) => DispatcherQueue.TryEnqueue(() =>
+        {
+            _navigator.Pause();
+            GameSessions?.Pause();
+        });
         host.Power.Resumed += (_, _) => DispatcherQueue.TryEnqueue(OnResumed);
         host.Power.DisplayStateChanged += (_, on) => DispatcherQueue.TryEnqueue(() =>
         {
             if (on) OnResumed();
-            else _navigator.Pause();
+            else
+            {
+                _navigator.Pause();
+                GameSessions?.Pause();
+            }
         });
         host.Power.Start();
 
@@ -113,6 +122,9 @@ public sealed partial class MainWindow : Window
 
     /// <summary>The library game currently running, if known (set by the game process watcher).</summary>
     internal RunningGame? RunningGame { get; set; }
+
+    /// <summary>Foreground game detection + per-game performance profiles.</summary>
+    internal GameSessionService? GameSessions { get; private set; }
     public AppHost Host => _host;
     public IntPtr Hwnd => _hwnd;
 
@@ -214,7 +226,7 @@ public sealed partial class MainWindow : Window
     public void NavigateTab(int index)
     {
         index = Math.Clamp(index, 0, TabPages.Length - 1);
-        if (index == _tab && ContentFrame.Content is not SafeModePage) { CurrentPage?.FocusDefault(); return; }
+        if (index == _tab && ContentFrame.Content?.GetType() == TabPages[index]) { CurrentPage?.FocusDefault(); return; }
         // Slide in the direction of travel (LB = from left, RB = from right).
         NavigationTransitionInfo transition = Motion.Enabled && _tab >= 0
             ? new SlideNavigationTransitionInfo
@@ -227,6 +239,18 @@ public sealed partial class MainWindow : Window
         UpdateTabs();
         UpdateHints();
     }
+
+    /// <summary>Opens the details / profile page for a game; B returns to the tab it came from.</summary>
+    public void ShowGameDetails(string gameId)
+    {
+        NavigationTransitionInfo transition = Motion.Enabled
+            ? new DrillInNavigationTransitionInfo()
+            : new SuppressNavigationTransitionInfo();
+        ContentFrame.Navigate(typeof(GameDetailsPage), gameId, transition);
+        UpdateHints();
+    }
+
+    public void CloseGameDetails() => NavigateTab(_tab < 0 ? 0 : _tab);
 
     private void NavigateToSafeMode()
     {
@@ -352,6 +376,7 @@ public sealed partial class MainWindow : Window
         var profile = PowerPolicy.Choose(status);
         _navigator.SetProfile(profile);
         Motion.PowerAllows = profile.AnimationsEnabled;
+        GameSessions?.SetLowPower(!profile.AnimationsEnabled);
     }
 
     private void UpdateControllerIcon()
@@ -364,6 +389,7 @@ public sealed partial class MainWindow : Window
     private void OnResumed()
     {
         _navigator.Resume();
+        GameSessions?.Resume();
         UpdateClock();
         UpdateBattery();
         UpdateControllerIcon();
@@ -453,6 +479,7 @@ public sealed partial class MainWindow : Window
     private async Task StartLibraryAsync()
     {
         await Library.LoadAsync();
+        if (GameSessions is not null) await GameSessions.StartAsync();
         if (_host.IsSafeMode) return; // don't run scanners in safe mode
 
         SetStatus("Looking for games…");

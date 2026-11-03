@@ -2,6 +2,7 @@ using Lumen.Core;
 using Lumen.Core.Diagnostics;
 using Lumen.Core.Hardware;
 using Lumen.Core.Library;
+using Lumen.Core.Profiles;
 using Lumen.Core.Startup;
 using Lumen.Data;
 using Lumen.Platform.Windows;
@@ -30,6 +31,7 @@ public sealed class AppHost
     public required string? SafeModeReason { get; init; }
     public required ShellSettings Settings { get; init; }
     public required IGameRepository Games { get; init; }
+    public required IProfileRepository Profiles { get; init; }
     public required LibraryService Library { get; init; }
     public required GameLauncher Launcher { get; init; }
     public required PlaySessionTracker Sessions { get; init; }
@@ -73,18 +75,21 @@ public sealed class AppHost
 
         // Data
         IGameRepository games;
+        IProfileRepository profiles;
         ISettingsStore settingsStore;
         try
         {
             var db = new LumenDatabase(paths.Database);
             db.Migrate();
             games = new SqliteGameRepository(db);
+            profiles = new SqliteProfileRepository(db);
             settingsStore = new SqliteSettingsStore(db);
         }
         catch (Exception ex)
         {
             Log.Error("Database unavailable - continuing in safe mode with an in-memory library.", ex);
             games = new InMemoryGameRepository();
+            profiles = new InMemoryProfileRepository();
             settingsStore = new InMemorySettingsStore();
             decision = StartupDecision.SafeMode;
             reason ??= $"The library database could not be opened ({ex.Message}).";
@@ -111,6 +116,7 @@ public sealed class AppHost
             SafeModeReason = reason,
             Settings = settings,
             Games = games,
+            Profiles = profiles,
             Library = new LibraryService(games, scanners),
             Launcher = new GameLauncher(),
             Sessions = new PlaySessionTracker(),

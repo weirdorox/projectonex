@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Lumen.App.Views.GameDetailsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Lumen.App.Controls"
+    Background="Transparent">
+
+    <Grid>
+        <controls:HeroStage x:Name="Stage" />
+
+        <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Hidden" HorizontalScrollMode="Disabled">
+            <StackPanel Padding="48,24,48,48" Spacing="22" MaxWidth="1000" HorizontalAlignment="Left">
+
+                <!-- Title -->
+                <StackPanel Spacing="6">
+                    <Image x:Name="Logo" MaxHeight="110" MaxWidth="460" Stretch="Uniform" HorizontalAlignment="Left" Visibility="Collapsed" />
+                    <TextBlock x:Name="TitleText" Style="{StaticResource LumenDisplayText}" TextWrapping="Wrap" />
+                    <TextBlock x:Name="MetaText" Style="{StaticResource LumenCaptionText}" FontSize="16" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button x:Name="PlayButton" Style="{StaticResource LumenAccentButtonStyle}" Click="OnPlayClick" MinWidth="160">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE768;" FontSize="16" />
+                            <TextBlock Text="Play" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="FavoriteButton" Click="OnFavoriteClick" />
+                </StackPanel>
+
+                <!-- Performance profile -->
+                <Border Style="{StaticResource LumenCardStyle}">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="Performance profile" Style="{StaticResource LumenSectionHeader}" Margin="0" />
+                        <TextBlock Style="{StaticResource LumenCaptionText}"
+                                   Text="Applied automatically whenever this game is in front - however you started it. Your normal settings come back when the game closes." />
+
+                        <TextBlock Text="Refresh rate" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                        <StackPanel x:Name="RefreshOptions" Orientation="Horizontal" Spacing="8" />
+
+                        <TextBlock Text="Power plan" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                        <StackPanel x:Name="PlanOptions" Orientation="Horizontal" Spacing="8" />
+
+                        <ToggleSwitch x:Name="BrightnessToggle" Header="Set brightness for this game" Toggled="OnBrightnessToggled" />
+                        <Slider x:Name="BrightnessSlider" Minimum="5" Maximum="100" StepFrequency="5" MaxWidth="480"
+                                HorizontalAlignment="Left" Width="480" IsEnabled="False" ValueChanged="OnBrightnessChanged"
+                                AutomationProperties.Name="Brightness for this game" />
+
+                        <TextBlock x:Name="UnsupportedText" Style="{StaticResource LumenCaptionText}" />
+                        <TextBlock x:Name="StatusText" Style="{StaticResource LumenCaptionText}" Foreground="{StaticResource LumenGoodBrush}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Details -->
+                <Border Style="{StaticResource LumenCardStyle}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Details" Style="{StaticResource LumenSectionHeader}" Margin="0" />
+                        <TextBlock x:Name="DetailsText" Style="{StaticResource LumenBodyText}" IsTextSelectionEnabled="True" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

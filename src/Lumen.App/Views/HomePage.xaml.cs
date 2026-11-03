@@ -40,6 +40,7 @@ public sealed partial class HomePage : Page, IShellPage
     public IReadOnlyList<ButtonHint> Hints => _hints ??=
     [
         ButtonHint.Create("A", "Play"),
+        ButtonHint.Create("X", "Details"),
         ButtonHint.Create("Y", "Favorite"),
         ButtonHint.Create("LT/RT", "Jump shelf"),
     ];
@@ -209,6 +210,9 @@ public sealed partial class HomePage : Page, IShellPage
         {
             case NavAction.Tertiary:
                 if (FocusedTile() is { } fav) GameActions.ToggleFavorite(fav);
+                return true;
+            case NavAction.Secondary:
+                if (FocusedTile() is { } details) Shell.ShowGameDetails(details.Id);
                 return true;
             case NavAction.ScrollDown:
             case NavAction.ScrollUp:
