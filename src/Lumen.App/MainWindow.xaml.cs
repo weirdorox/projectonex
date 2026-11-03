@@ -495,7 +495,7 @@ public sealed partial class MainWindow : Window
     }
 
     private readonly System.Diagnostics.Stopwatch _uptime = System.Diagnostics.Stopwatch.StartNew();
-    private TimeSpan _lastResume = TimeSpan.MinValue;
+    private TimeSpan? _lastResume;
     private bool _sleeping;
 
     /// <summary>
@@ -519,8 +519,21 @@ public sealed partial class MainWindow : Window
     /// </summary>
     private void OnResumed()
     {
+        try
+        {
+            OnResumedCore();
+        }
+        catch (Exception ex)
+        {
+            // Runs from dispatcher callbacks: an escaping exception would end the process natively.
+            Log.Error("Resume handling failed.", ex);
+        }
+    }
+
+    private void OnResumedCore()
+    {
         var now = _uptime.Elapsed;
-        if (!_sleeping && now - _lastResume < TimeSpan.FromSeconds(2)) return;
+        if (!_sleeping && _lastResume is { } last && now - last < TimeSpan.FromSeconds(2)) return;
         _lastResume = now;
         _sleeping = false;
         var timer = System.Diagnostics.Stopwatch.StartNew();
