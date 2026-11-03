@@ -320,6 +320,29 @@ public sealed partial class MainWindow : Window
 
     private void OnQuickSettingsClick(object sender, RoutedEventArgs e) => ToggleQuickAccess();
 
+    /// <summary>CI smoke test (LUMEN_SMOKE_UI=1): open every tab and every Quick settings section.</summary>
+    private async Task RunUiSmokeAsync()
+    {
+        Log.Info("[smoke] UI walk starting.");
+        for (var i = 0; i < TabPages.Length; i++)
+        {
+            NavigateTab(i);
+            await Task.Delay(700);
+            Log.Info($"[smoke] tab {i} ok.");
+        }
+        NavigateTab(0);
+        ToggleQuickAccess();
+        await Task.Delay(1500);
+        for (var i = 0; i < 5; i++)
+        {
+            _overlay?.HandleAction(NavAction.NextTab);
+            await Task.Delay(1200);
+            Log.Info($"[smoke] quick settings section step {i} ok.");
+        }
+        _overlay?.HideOverlay();
+        Log.Info("[smoke] UI walk finished.");
+    }
+
     private void UpdateTabs()
     {
         var accent = (Brush)Application.Current.Resources["LumenAccentBrush"];
@@ -669,6 +692,7 @@ public sealed partial class MainWindow : Window
             await Task.Delay(1500); // let the first frame settle
             await _host.Hardware.Value;
             await EvaluateDockAsync();
+            if (Environment.GetEnvironmentVariable("LUMEN_SMOKE_UI") == "1") await RunUiSmokeAsync();
         }
         catch (Exception ex)
         {

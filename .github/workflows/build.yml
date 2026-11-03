@@ -85,8 +85,9 @@ jobs:
         run: |
           $exe = Resolve-Path artifacts/publish/Lumen/Lumen.exe
           $logs = Join-Path $env:LOCALAPPDATA 'Lumen/logs'
+          $env:LUMEN_SMOKE_UI = '1'
           $p = Start-Process $exe -ArgumentList '--windowed' -PassThru
-          Start-Sleep -Seconds 25
+          Start-Sleep -Seconds 30
           $alive = -not $p.HasExited
           Write-Host "Lumen alive after 25 s: $alive (exit code: $(if ($p.HasExited) { $p.ExitCode } else { '-' }))"
           if (Test-Path $logs) { Get-ChildItem $logs | Sort-Object LastWriteTime | ForEach-Object { Write-Host "---- $($_.Name)"; Get-Content $_.FullName -Tail 200 } }
@@ -96,6 +97,9 @@ jobs:
             ForEach-Object { Write-Host "==== $($_.ProviderName) $($_.TimeCreated)"; Write-Host $_.Message }
           if ($alive) { Stop-Process -Id $p.Id -Force }
           if (-not $alive) { throw "Lumen exited during start-up" }
+          $log = Get-ChildItem $logs | Sort-Object LastWriteTime | Select-Object -Last 1
+          if ((Get-Content $log.FullName -Raw) -match 'Unhandled UI exception|Quick access failed') { throw "UI exception during the smoke walk" }
+          if ((Get-Content $log.FullName -Raw) -notmatch '\[smoke\] UI walk finished') { throw "UI smoke walk did not finish" }
 
       - uses: actions/upload-artifact@v4
         with:
