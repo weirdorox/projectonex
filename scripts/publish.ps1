@@ -36,6 +36,10 @@ try {
         --self-contained true -p:WindowsAppSDKSelfContained=true -p:PublishReadyToRun=true -o $out
     if ($LASTEXITCODE -ne 0) { throw "App publish failed" }
 
+    Write-Host "== Publishing Lumen.PowerHelper ==" -ForegroundColor Cyan
+    dotnet publish src/Lumen.PowerHelper/Lumen.PowerHelper.csproj -c Release -r $rid --self-contained true -o $out
+    if ($LASTEXITCODE -ne 0) { throw "PowerHelper publish failed" }
+
     Write-Host "== Publishing Lumen.Recovery ==" -ForegroundColor Cyan
     dotnet publish src/Lumen.Recovery/Lumen.Recovery.csproj -c Release -r $rid --self-contained true -o $out
     if ($LASTEXITCODE -ne 0) { throw "Recovery publish failed" }
@@ -44,7 +48,7 @@ try {
         $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
             Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
         if (-not $signtool) { throw "signtool.exe not found - install the Windows SDK." }
-        foreach ($f in @("$out/Lumen.exe", "$out/Lumen.Recovery.exe")) {
+        foreach ($f in @("$out/Lumen.exe", "$out/Lumen.Recovery.exe", "$out/Lumen.PowerHelper.exe")) {
             & $signtool.FullName sign /sha1 $CertificateThumbprint /fd SHA256 /tr $TimestampUrl /td SHA256 $f
             if ($LASTEXITCODE -ne 0) { throw "Signing $f failed" }
         }

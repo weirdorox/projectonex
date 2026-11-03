@@ -26,7 +26,7 @@ namespace Lumen.App;
 /// </summary>
 public sealed partial class QuickAccessWindow : Window
 {
-    private const int PanelWidthEpx = 420;
+    private const int PanelWidthEpx = 440;
 
     private readonly MainWindow _main;
     private readonly IntPtr _hwnd;
@@ -92,7 +92,7 @@ public sealed partial class QuickAccessWindow : Window
             DesktopSwitcher.BringToForeground(_hwnd);
             IsOpen = true;
             UpdateHeader();
-            SetSection(_targetGame is null ? 0 : 1, focus: false);
+            SetSection(_targetGame is null ? 0 : GameSection, focus: false);
             RenderGameSection();
             _ = RenderSystemSectionAsync();
             DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => FocusNavigation.Focus(HomeButton));
@@ -299,6 +299,8 @@ public sealed partial class QuickAccessWindow : Window
         {
             var s = await Task.Run(() => monitor.Sample());
             UpdateHeader();
+            if (_section == 2) RenderBatterySection();
+            if (_section == 1) RenderTdpLive();
             SetBar(CpuBar, CpuText, s.CpuPercent);
             SetBar(GpuBar, GpuText, s.GpuPercent);
             SetBar(RamBar, RamText, s.MemoryPercent);

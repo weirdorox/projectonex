@@ -11,7 +11,8 @@ namespace Lumen.Recovery;
 ///   Lumen.Recovery.exe                     interactive menu
 ///   Lumen.Recovery.exe --restore           close Lumen, remove autostart, safe mode next start, ensure desktop
 ///   Lumen.Recovery.exe --disable-autologon turn off automatic sign-in (asks for administrator rights)
-///   Lumen.Recovery.exe --all               both of the above
+///   Lumen.Recovery.exe --remove-power-helper remove the elevated TDP helper task (administrator)
+///   Lumen.Recovery.exe --all               all of the above
 ///   add --quiet to skip the final "press a key"
 /// </summary>
 internal static class Program
@@ -30,6 +31,13 @@ internal static class Program
             {
                 Restore(paths);
                 DisableAutoLogon(args);
+                RemovePowerHelper();
+            }
+            else if (a.Contains("--remove-power-helper"))
+            {
+                var ok = RemovePowerHelper();
+                Pause(quiet);
+                return ok ? 0 : 2;
             }
             else if (a.Contains("--restore"))
             {
@@ -75,6 +83,7 @@ internal static class Program
             Console.WriteLine("  2  Turn off automatic sign-in (administrator)");
             Console.WriteLine("  3  Both");
             Console.WriteLine("  4  Open Lumen log folder");
+            Console.WriteLine("  5  Remove the Lumen power helper / TDP control (administrator)");
             Console.WriteLine("  Q  Quit");
             Console.WriteLine();
             Console.Write("Choose: ");
@@ -88,6 +97,7 @@ internal static class Program
                 case '4':
                     using (Process.Start(new ProcessStartInfo(paths.Logs) { UseShellExecute = true })) { }
                     break;
+                case '5': RemovePowerHelper(); Pause(false); break;
                 case 'q': return 0;
             }
         }
@@ -132,6 +142,37 @@ internal static class Program
         var (ok, message) = RecoveryActions.DisableAutoSignIn();
         Console.WriteLine(ok ? $"Automatic sign-in is now off. {message}" : $"Not changed: {message}");
         return ok;
+    }
+
+    /// <summary>
+    /// Removes the "Lumen\PowerHelper" scheduled task. TDP limits themselves return to the firmware
+    /// values on the next restart (and the helper restores them when Lumen stops).
+    /// </summary>
+    private static bool RemovePowerHelper()
+    {
+        if (!RecoveryActions.IsElevated)
+        {
+            try
+            {
+                using var p = Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--remove-power-helper --quiet")
+                {
+                    UseShellExecute = true,
+                    Verb = "runas",
+                });
+                p?.WaitForExit();
+                var done = p?.ExitCode == 0;
+                Console.WriteLine(done ? "Power helper removed." : "The power helper was not removed.");
+                return done;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Not changed: {ex.Message}");
+                return false;
+            }
+        }
+        var rc = Lumen.Platform.Windows.Power.PowerHelperSetup.UninstallElevated();
+        Console.WriteLine(rc == 0 ? "Power helper removed. TDP returns to firmware limits after a restart." : "No power helper task was found.");
+        return true;
     }
 
     private static void Step(string name, Func<string> action)

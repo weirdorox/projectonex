@@ -30,7 +30,7 @@ public abstract class DeviceProfileBase : IDeviceProfile
 {
     protected static readonly HardwareFeature[] DocumentedWindowsFeatures =
     [
-        HardwareFeature.Battery, HardwareFeature.Volume, HardwareFeature.Brightness,
+        HardwareFeature.Battery, HardwareFeature.BatteryTelemetry, HardwareFeature.Volume, HardwareFeature.Brightness,
         HardwareFeature.RefreshRate, HardwareFeature.PowerPlan, HardwareFeature.CpuUsage,
         HardwareFeature.GpuUsage, HardwareFeature.MemoryUsage, HardwareFeature.ThermalZoneTemperature,
     ];
@@ -45,7 +45,7 @@ public abstract class DeviceProfileBase : IDeviceProfile
     public virtual string ExplainUnsupported(HardwareFeature feature) => feature switch
     {
         HardwareFeature.TdpControl =>
-            "TDP control needs a vendor-specific interface that is not publicly documented for this device. Use the manufacturer's tool.",
+            "Real TDP control needs the optional PawnIO driver and the Lumen power helper (Settings > Performance). On Intel it writes the documented package power limits; firmware may lock or override them.",
         HardwareFeature.FanControl =>
             "Fan control needs direct embedded-controller access that is not publicly documented for this device. Use the manufacturer's tool.",
         HardwareFeature.CpuTemperature or HardwareFeature.GpuTemperature =>

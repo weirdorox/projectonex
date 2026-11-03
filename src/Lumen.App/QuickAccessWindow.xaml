@@ -39,19 +39,23 @@
                 </Grid>
 
                 <!-- Section tabs (LB / RB) -->
-                <Grid ColumnSpacing="6">
+                <Grid ColumnSpacing="4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="LB" FontSize="11" FontWeight="Bold" Foreground="{StaticResource LumenTextDimBrush}" VerticalAlignment="Center" />
-                    <Button x:Name="QuickTab" Grid.Column="1" Content="Quick" Tag="0" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" HorizontalAlignment="Stretch" />
-                    <Button x:Name="GameTab" Grid.Column="2" Content="Game" Tag="1" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" HorizontalAlignment="Stretch" />
-                    <Button x:Name="SystemTab" Grid.Column="3" Content="System" Tag="2" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" HorizontalAlignment="Stretch" />
-                    <TextBlock Grid.Column="4" Text="RB" FontSize="11" FontWeight="Bold" Foreground="{StaticResource LumenTextDimBrush}" VerticalAlignment="Center" />
+                    <Button x:Name="QuickTab" Grid.Column="1" Content="Quick" Tag="0" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" Padding="4,6" FontSize="13" HorizontalAlignment="Stretch" />
+                    <Button x:Name="PowerTab" Grid.Column="2" Content="Power" Tag="1" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" Padding="4,6" FontSize="13" HorizontalAlignment="Stretch" />
+                    <Button x:Name="BatteryTab" Grid.Column="3" Content="Battery" Tag="2" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" Padding="4,6" FontSize="13" HorizontalAlignment="Stretch" />
+                    <Button x:Name="GameTab" Grid.Column="4" Content="Game" Tag="3" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" Padding="4,6" FontSize="13" HorizontalAlignment="Stretch" />
+                    <Button x:Name="SystemTab" Grid.Column="5" Content="System" Tag="4" Click="OnSectionClick" Style="{StaticResource LumenPillButtonStyle}" Padding="4,6" FontSize="13" HorizontalAlignment="Stretch" />
+                    <TextBlock Grid.Column="6" Text="RB" FontSize="11" FontWeight="Bold" Foreground="{StaticResource LumenTextDimBrush}" VerticalAlignment="Center" />
                 </Grid>
 
                 <!-- ================= QUICK ================= -->
@@ -99,6 +103,42 @@
                     <Button Content="Windows power settings" Click="OnPowerSettingsClick" HorizontalAlignment="Stretch" />
                 </StackPanel>
 
+
+
+                <TextBlock x:Name="UnsupportedText" Style="{StaticResource LumenCaptionText}" FontSize="13" />
+                </StackPanel>
+
+                <!-- ================= POWER ================= -->
+                <StackPanel x:Name="PowerPanel" Spacing="12" Visibility="Collapsed">
+                    <TextBlock Text="Smart Power" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <Slider x:Name="SmartSlider" Minimum="0" Maximum="100" StepFrequency="5" ValueChanged="OnSmartChanged"
+                            AutomationProperties.Name="Smart Power: battery life to performance" />
+                    <Grid>
+                        <TextBlock Text="Battery life" Style="{StaticResource LumenCaptionText}" FontSize="12" />
+                        <TextBlock Text="Performance" Style="{StaticResource LumenCaptionText}" FontSize="12" HorizontalAlignment="Right" />
+                    </Grid>
+                    <TextBlock x:Name="SmartPreviewText" Style="{StaticResource LumenCaptionText}" />
+                    <Button x:Name="SmartApplyButton" Content="Apply Smart Power" HorizontalAlignment="Stretch" Click="OnSmartApplyClick" />
+                    <ToggleSwitch x:Name="SmartAutoToggle" Header="Switch automatically between battery and AC" Toggled="OnSmartAutoToggled" />
+
+                    <TextBlock Text="Processor power (TDP)" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                    <TextBlock x:Name="TdpStatusText" Style="{StaticResource LumenCaptionText}" />
+                    <StackPanel x:Name="TdpControls" Spacing="10" Visibility="Collapsed">
+                        <Grid>
+                            <TextBlock x:Name="TdpValueText" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource LumenTextBrush}" />
+                            <TextBlock x:Name="TdpRangeText" Style="{StaticResource LumenCaptionText}" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
+                        </Grid>
+                        <Slider x:Name="TdpSlider" StepFrequency="1" ValueChanged="OnTdpSliderChanged" AutomationProperties.Name="TDP watts" />
+                        <VariableSizedWrapGrid x:Name="TdpPresetPanel" Orientation="Horizontal" ItemWidth="104" ItemHeight="52" />
+                        <Button x:Name="TdpRestoreButton" Content="Firmware default" HorizontalAlignment="Stretch" Click="OnTdpRestoreClick" />
+                        <TextBlock x:Name="TdpLiveText" Style="{StaticResource LumenCaptionText}" />
+                    </StackPanel>
+                    <Button x:Name="TdpSetupButton" Content="Set up real TDP control…" HorizontalAlignment="Stretch" Click="OnTdpSetupClick" Visibility="Collapsed" />
+
+                    <TextBlock Text="Frame rate" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}"
+                               Text="Lumen does not inject an FPS limiter into games (anti-cheat risk). Use the game's own limiter or Intel Graphics Software. Lowering the refresh rate saves power but is not an FPS limit." />
+
                 <!-- Performance -->
                 <StackPanel x:Name="PerfSection" Spacing="8">
                     <TextBlock Text="Performance" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
@@ -130,8 +170,15 @@
                         <TextBlock x:Name="TempText" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource LumenCaptionText}" />
                     </Grid>
                 </StackPanel>
+                </StackPanel>
 
-                <TextBlock x:Name="UnsupportedText" Style="{StaticResource LumenCaptionText}" FontSize="13" />
+                <!-- ================= BATTERY ================= -->
+                <StackPanel x:Name="BatteryPanel" Spacing="10" Visibility="Collapsed">
+                    <TextBlock x:Name="BatteryBigText" FontSize="40" FontWeight="SemiBold" Foreground="{StaticResource LumenTextBrush}" />
+                    <TextBlock x:Name="BatteryStateText" Style="{StaticResource LumenBodyText}" />
+                    <TextBlock x:Name="BatteryDetailText" Style="{StaticResource LumenCaptionText}" />
+                    <Button Content="Battery saver settings" Tag="ms-settings:batterysaver" Click="OnWindowsSettingsClick" HorizontalAlignment="Stretch" />
+                    <Button Content="Power &amp; battery settings" Tag="ms-settings:powersleep" Click="OnWindowsSettingsClick" HorizontalAlignment="Stretch" />
                 </StackPanel>
 
                 <!-- ================= GAME ================= -->
@@ -162,6 +209,17 @@
 
                 <!-- ================= SYSTEM ================= -->
                 <StackPanel x:Name="SystemPanel" Spacing="12" Visibility="Collapsed">
+                    <TextBlock Text="Power" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="128" ItemHeight="56">
+                        <Button x:Name="SleepButton" Content="Sleep" Click="OnSleepClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button x:Name="HibernateButton" Content="Hibernate" Click="OnHibernateClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button x:Name="RestartButton" Content="Restart" Click="OnRestartClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button x:Name="ShutdownButton" Content="Shut down" Click="OnShutdownClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Restart Lumen" Click="OnRestartLumenClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Task Manager" Click="OnTaskManagerClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                    </VariableSizedWrapGrid>
+                    <TextBlock x:Name="PowerConfirmText" Style="{StaticResource LumenCaptionText}" />
+
                     <TextBlock Text="Connections" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
                     <ToggleSwitch x:Name="WifiToggle" Header="Wi-Fi" Toggled="OnWifiToggled" Visibility="Collapsed" />
                     <ToggleSwitch x:Name="BluetoothToggle" Header="Bluetooth" Toggled="OnBluetoothToggled" Visibility="Collapsed" />

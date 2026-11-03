@@ -6,6 +6,7 @@ using Lumen.Core.Diagnostics;
 using Lumen.Core.Hardware;
 using Lumen.Core.Input;
 using Lumen.Core.Models;
+using Lumen.Core.Power;
 using Lumen.Core.Profiles;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -122,6 +123,23 @@ public sealed partial class GameDetailsPage : Page, IShellPage
                 RefreshOptions.Children.Add(Note("Not adjustable on this display."));
             }
 
+            // TDP (only through the real backend; presets outside the CPU range are disabled)
+            TdpOptions.Children.Clear();
+            var tdp = Shell.Tdp;
+            if (tdp.IsUsable && tdp.Range is { } range)
+            {
+                AddOption(TdpOptions, "Default", _profile.TdpWatts is null, () => _profile with { TdpWatts = null });
+                foreach (var preset in TdpPresets.Resolve(range))
+                {
+                    var watts = (int)preset.Preset.TargetWatts;
+                    AddOption(TdpOptions, $"{preset.Preset.Name} {watts} W", _profile.TdpWatts == watts, () => _profile with { TdpWatts = watts }, preset.Available, preset.Reason);
+                }
+            }
+            else
+            {
+                TdpOptions.Children.Add(Note(tdp.Status.Locked ? "Locked by the firmware on this device." : tdp.Status.UnavailableReason ?? "Not available."));
+            }
+
             // Power plan
             var plans = hw?.PowerPlans?.GetPlans() ?? [];
             if (plans.Count > 1)
@@ -147,8 +165,7 @@ public sealed partial class GameDetailsPage : Page, IShellPage
             var profileInfo = hw?.Profile;
             UnsupportedText.Text = profileInfo is null
                 ? "Hardware information is not available yet."
-                : $"TDP: {profileInfo.ExplainUnsupported(HardwareFeature.TdpControl)}\nFan: {profileInfo.ExplainUnsupported(HardwareFeature.FanControl)}";
-            if (hw?.Tdp is not null) UnsupportedText.Text = string.Empty;
+                : $"Fan: {profileInfo.ExplainUnsupported(HardwareFeature.FanControl)}";
         }
         finally
         {
@@ -156,13 +173,15 @@ public sealed partial class GameDetailsPage : Page, IShellPage
         }
     }
 
-    private void AddOption(Panel panel, string label, bool selected, Func<PerformanceProfile> change)
+    private void AddOption(Panel panel, string label, bool selected, Func<PerformanceProfile> change, bool enabled = true, string? reason = null)
     {
         var b = new Button
         {
             Content = label,
             Style = (Style)Application.Current.Resources["LumenPillButtonStyle"],
+            IsEnabled = enabled,
         };
+        if (reason is not null) ToolTipService.SetToolTip(b, reason);
         if (selected)
         {
             b.Background = (Brush)Application.Current.Resources["LumenAccentSoftBrush"];

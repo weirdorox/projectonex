@@ -4,6 +4,7 @@ using Lumen.App.Input;
 using Lumen.Core.Diagnostics;
 using Lumen.Core.Hardware;
 using Lumen.Core.Input;
+using Lumen.Platform.Windows.Power;
 using Lumen.Platform.Windows.Shell;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -65,6 +66,7 @@ public sealed partial class SettingsPage : Page, IShellPage
         }
 
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, FocusDefault);
+        await RenderTdpSetupAsync();
         await RenderDeviceAsync();
     }
 
@@ -155,6 +157,66 @@ public sealed partial class SettingsPage : Page, IShellPage
         if (!RunRecoveryTool("--disable-autologon", elevated: true))
             TroubleshootText.Text = "Could not start Lumen Recovery. Use Sysinternals Autologon → Disable, or netplwiz.";
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, RenderAutoSignIn);
+    }
+
+    // ================= Performance (real TDP) =================
+
+    private async Task RenderTdpSetupAsync()
+    {
+        var shipped = PowerHelperSetup.IsHelperShipped;
+        var pawnIo = PawnIo.FindLibrary() is not null;
+        var module = PawnIo.ModuleCandidates("IntelMSR.bin", Host.Paths.Root).Any(File.Exists);
+        var installed = shipped && await Task.Run(PowerHelperSetup.IsInstalled);
+
+        var lines = new List<string>
+        {
+            $"PawnIO driver: {(pawnIo ? "installed" : "not installed")}",
+            $"IntelMSR module: {(module ? "found" : "missing")}",
+            $"Lumen power helper: {(!shipped ? "not part of this build" : installed ? "enabled" : "not enabled")}",
+        };
+        if (installed)
+        {
+            var status = await Shell.Tdp.RefreshAsync();
+            lines.Add(status.Available
+                ? $"TDP control works: {status.Cpu}, {status.MinWatts:0.#}–{status.MaxWatts:0.#} W{(status.Locked ? " (locked by firmware)" : "")}."
+                : $"Not working yet: {status.UnavailableReason}");
+        }
+        TdpSetupStatusText.Text = string.Join("\n", lines);
+        TdpEnableButton.Visibility = shipped && !installed ? Visibility.Visible : Visibility.Collapsed;
+        TdpDisableButton.Visibility = installed ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void OnGetPawnIoClick(object sender, RoutedEventArgs e)
+    {
+        try { using var _ = Process.Start(new ProcessStartInfo("https://pawnio.eu") { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Warn("Opening pawnio.eu failed.", ex); }
+    }
+
+    private void OnModuleFolderClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dir = Path.Combine(Host.Paths.Root, "pawnio");
+            Directory.CreateDirectory(dir);
+            using var _ = Process.Start(new ProcessStartInfo(dir) { UseShellExecute = true });
+        }
+        catch (Exception ex) { Log.Warn("Opening the module folder failed.", ex); }
+    }
+
+    private async void OnTdpEnableClick(object sender, RoutedEventArgs e)
+    {
+        TdpSetupStatusText.Text = "Waiting for the administrator prompt…";
+        var error = await Task.Run(() => PowerHelperSetup.Install(Host.Paths.Root));
+        if (error is not null) TroubleshootText.Text = error;
+        await RenderTdpSetupAsync();
+    }
+
+    private async void OnTdpDisableClick(object sender, RoutedEventArgs e)
+    {
+        if (Shell.Tdp.Status.RequestedWatts is not null) await Shell.Tdp.RestoreAsync();
+        var error = await Task.Run(PowerHelperSetup.Uninstall);
+        if (error is not null) TroubleshootText.Text = error;
+        await RenderTdpSetupAsync();
     }
 
     // ================= Library =================

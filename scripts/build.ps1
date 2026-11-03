@@ -33,6 +33,10 @@ try {
     dotnet build src/Lumen.Recovery/Lumen.Recovery.csproj -c $Configuration
     if ($LASTEXITCODE -ne 0) { throw "Recovery build failed" }
 
+    Write-Host "== Power helper ==" -ForegroundColor Cyan
+    dotnet build src/Lumen.PowerHelper/Lumen.PowerHelper.csproj -c $Configuration
+    if ($LASTEXITCODE -ne 0) { throw "PowerHelper build failed" }
+
     Write-Host "== WinUI app ($Platform) ==" -ForegroundColor Cyan
     dotnet build src/Lumen.App/Lumen.App.csproj -c $Configuration -p:Platform=$Platform
     if ($LASTEXITCODE -ne 0) { throw "App build failed" }

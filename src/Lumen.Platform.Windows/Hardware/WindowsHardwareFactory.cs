@@ -18,6 +18,7 @@ public static class WindowsHardwareFactory
 
         var candidates = new ProviderCandidates(
             Battery: Try("battery", () => new Win32BatteryInfo()),
+            BatteryTelemetry: Try("battery telemetry", AggregateBatteryTelemetry.TryCreate),
             Volume: Try("volume", CoreAudioVolumeControl.TryCreate),
             Brightness: Try("brightness", WmiBrightnessControl.TryCreate),
             Display: Try("display", () => new DisplayModeControl()),

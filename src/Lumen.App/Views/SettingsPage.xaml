@@ -37,6 +37,30 @@
                 </StackPanel>
             </Border>
 
+            <!-- ================= Performance (real TDP) ================= -->
+            <TextBlock Text="Performance" Style="{StaticResource LumenSectionHeader}" FontSize="24" Margin="0,12,0,0" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Real TDP control (optional)" Style="{StaticResource LumenSectionHeader}" Margin="0" />
+                    <TextBlock x:Name="TdpSetupStatusText" Style="{StaticResource LumenBodyText}" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}">
+                        <Run Text="Changing the processor power limit needs a hardware driver. Lumen uses PawnIO - signed, open source, compatible with Memory Integrity - and never installs it for you:" />
+                        <LineBreak /><Run Text="1. Install PawnIO from pawnio.eu." />
+                        <LineBreak /><Run Text="2. Put IntelMSR.bin from the official PawnIO.Modules release into the folder opened by the button below." />
+                        <LineBreak /><Run Text="3. Enable the Lumen power helper (one administrator prompt). It runs only when Lumen needs it, accepts commands only from your account, and restores the firmware limits when Lumen stops." />
+                        <LineBreak /><Run Text="Limits are read from your CPU. A restart always returns to the firmware's own limits." />
+                    </TextBlock>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Get PawnIO" Click="OnGetPawnIoClick" />
+                        <Button Content="Open module folder" Click="OnModuleFolderClick" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button x:Name="TdpEnableButton" Content="Enable power helper" Style="{StaticResource LumenAccentButtonStyle}" Click="OnTdpEnableClick" />
+                        <Button x:Name="TdpDisableButton" Content="Remove power helper" Click="OnTdpDisableClick" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- ================= Library ================= -->
             <TextBlock Text="Library" Style="{StaticResource LumenSectionHeader}" FontSize="24" Margin="0,12,0,0" />
             <Border Style="{StaticResource LumenCardStyle}">

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Elevated helper for real TDP control. Started on demand by the "Lumen\PowerHelper" scheduled task
+    the user creates once from Lumen Settings (one UAC prompt). Talks only to the signed-in user over
+    an ACL-restricted named pipe, validates every request, restores firmware limits when idle.
+    WinExe = no console window.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <RootNamespace>Lumen.PowerHelper</RootNamespace>
+    <AssemblyName>Lumen.PowerHelper</AssemblyName>
+    <ApplicationIcon>..\Lumen.App\Assets\Lumen.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Lumen.Core\Lumen.Core.csproj" />
+    <ProjectReference Include="..\Lumen.Platform.Windows\Lumen.Platform.Windows.csproj" />
+  </ItemGroup>
+</Project>

@@ -20,6 +20,8 @@ namespace Lumen.App;
 /// </summary>
 public sealed partial class QuickAccessWindow
 {
+    private const int SectionCount = 5;
+    internal const int GameSection = 3;
     private int _section;
     private ProcessInfo? _target;
     private GameEntry? _targetGame;
@@ -56,16 +58,18 @@ public sealed partial class QuickAccessWindow
 
     private void SetSection(int index, bool focus = true)
     {
-        _section = (index % 3 + 3) % 3;
-        QuickPanel.Visibility = _section == 0 ? Visibility.Visible : Visibility.Collapsed;
-        GamePanel.Visibility = _section == 1 ? Visibility.Visible : Visibility.Collapsed;
-        SystemPanel.Visibility = _section == 2 ? Visibility.Visible : Visibility.Collapsed;
+        _section = (index % SectionCount + SectionCount) % SectionCount;
+        StackPanel[] panels = [QuickPanel, PowerPanel, BatteryPanel, GamePanel, SystemPanel];
+        for (var i = 0; i < panels.Length; i++)
+            panels[i].Visibility = i == _section ? Visibility.Visible : Visibility.Collapsed;
+        if (_section == 1) _ = RenderPowerSectionAsync();
+        if (_section == 2) RenderBatterySection();
 
         var accent = (Brush)Application.Current.Resources["LumenAccentBrush"];
         var soft = (Brush)Application.Current.Resources["LumenAccentSoftBrush"];
         var dim = (Brush)Application.Current.Resources["LumenTextDimBrush"];
         var surface = (Brush)Application.Current.Resources["LumenSurfaceHighBrush"];
-        Button[] tabs = [QuickTab, GameTab, SystemTab];
+        Button[] tabs = [QuickTab, PowerTab, BatteryTab, GameTab, SystemTab];
         for (var i = 0; i < tabs.Length; i++)
         {
             tabs[i].Foreground = i == _section ? accent : dim;
@@ -74,7 +78,7 @@ public sealed partial class QuickAccessWindow
 
         Scroller.ChangeView(null, 0, null, disableAnimation: true);
         if (!focus) return;
-        StackPanel panel = _section switch { 1 => GamePanel, 2 => SystemPanel, _ => QuickPanel };
+        var panel = panels[_section];
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
         {
             if (FocusManager.FindFirstFocusableElement(panel) is { } first) FocusNavigation.Focus(first);

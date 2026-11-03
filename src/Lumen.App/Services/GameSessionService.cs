@@ -80,7 +80,8 @@ public sealed class GameSessionService
         var report = ProfileApplyReport.None;
         if (_engine is not null && string.Equals(_engine.SessionGameId, profile.GameId, StringComparison.OrdinalIgnoreCase))
         {
-            report = _engine.UpdateProfile(profile.IsEmpty ? null : profile);
+            var engine = _engine;
+            report = await Task.Run(() => engine.UpdateProfile(profile.IsEmpty ? null : profile)); // may cross to the TDP helper
             LastReport = report;
         }
         Changed?.Invoke(this, EventArgs.Empty);
@@ -112,7 +113,8 @@ public sealed class GameSessionService
         try
         {
             var hw = await _host.Hardware.Value;
-            _adapter = new HardwareProfileAdapter(hw);
+            await _shell.Tdp.RefreshAsync();
+            _adapter = new HardwareProfileAdapter(hw, _shell.Tdp);
             _engine = new ProfileEngine(_adapter);
         }
         catch (Exception ex)

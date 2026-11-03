@@ -45,6 +45,8 @@ public sealed partial class MainWindow : Window
         _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         ArtworkService.Initialize(host.Paths, DispatcherQueue);
         Library = new LibraryStore(host, DispatcherQueue);
+        Tdp = new TdpService(DispatcherQueue, host.IsSafeMode);
+        SmartPower = new SmartPowerService(host, Tdp);
         GameSessions = new GameSessionService(host, this, DispatcherQueue);
 
         // ---- window chrome ----
@@ -122,6 +124,12 @@ public sealed partial class MainWindow : Window
 
     /// <summary>The library game currently running, if known (set by the game process watcher).</summary>
     internal RunningGame? RunningGame { get; set; }
+
+    /// <summary>Real TDP control (helper-backed; reports unavailability honestly).</summary>
+    internal TdpService Tdp { get; }
+
+    /// <summary>One-slider battery/performance control.</summary>
+    internal SmartPowerService SmartPower { get; }
 
     /// <summary>Foreground game detection + per-game performance profiles.</summary>
     internal GameSessionService? GameSessions { get; private set; }
@@ -373,10 +381,56 @@ public sealed partial class MainWindow : Window
                 pct <= PowerPolicy.LowBatteryPercent && status.Source != PowerSource.AC ? "LumenBadBrush" : "LumenTextBrush"];
         }
 
+        // Battery <-> AC switch: optionally re-apply the Smart Power position stored for the new source.
+        if (_lastSource is { } previous && previous != status.Source && status.Source != PowerSource.Unknown
+            && _host.Settings.SmartPowerAuto && GameSessions?.Engine?.ActiveProfile is null && !_host.IsSafeMode)
+        {
+            var position = status.Source == PowerSource.Battery ? _host.Settings.SmartPowerBattery : _host.Settings.SmartPowerAc;
+            _ = ApplySmartPowerAsync(position);
+        }
+        _lastSource = status.Source;
+
         var profile = PowerPolicy.Choose(status);
         _navigator.SetProfile(profile);
         Motion.PowerAllows = profile.AnimationsEnabled;
         GameSessions?.SetLowPower(!profile.AnimationsEnabled);
+    }
+
+    private PowerSource? _lastSource;
+
+    private async Task ApplySmartPowerAsync(int position)
+    {
+        try
+        {
+            var result = await SmartPower.ApplyAsync(position);
+            ShowToast($"Smart Power: {result.Plan.Label} ({string.Join(", ", result.Applied)})");
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Automatic Smart Power switch failed.", ex);
+        }
+    }
+
+    /// <summary>Restarts the Lumen interface (after this instance has exited, so single-instance redirection does not swallow it).</summary>
+    public void RestartShell()
+    {
+        try
+        {
+            var exe = AppHost.ExecutablePath;
+            using var _ = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe",
+                $"/c ping -n 3 127.0.0.1 >nul & start \"\" \"{exe}\"")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Could not schedule the Lumen restart.", ex);
+            ShowToast("Restart failed - open Lumen from the Start menu.");
+            return;
+        }
+        ExitShell();
     }
 
     private void UpdateControllerIcon()

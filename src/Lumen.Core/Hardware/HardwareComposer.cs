@@ -3,6 +3,7 @@ namespace Lumen.Core.Hardware;
 /// <summary>Providers that the platform layer *could* offer on this machine.</summary>
 public sealed record ProviderCandidates(
     IBatteryInfo? Battery = null,
+    IBatteryTelemetry? BatteryTelemetry = null,
     IVolumeControl? Volume = null,
     IBrightnessControl? Brightness = null,
     IDisplayModeControl? Display = null,
@@ -28,6 +29,7 @@ public static class HardwareComposer
             Profile = profile,
             Identity = identity,
             Battery = P(HardwareFeature.Battery) ? c.Battery : null,
+            BatteryTelemetry = P(HardwareFeature.BatteryTelemetry) ? c.BatteryTelemetry : null,
             Volume = P(HardwareFeature.Volume) ? c.Volume : null,
             Brightness = P(HardwareFeature.Brightness) ? c.Brightness : null,
             Display = P(HardwareFeature.RefreshRate) ? c.Display : null,

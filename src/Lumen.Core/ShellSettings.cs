@@ -58,11 +58,34 @@ public sealed class ShellSettings
         set => _store.Set("profiles.pendingBaseline", value);
     }
 
+    /// <summary>Smart Power slider position (0-100) used on battery / on AC.</summary>
+    public int SmartPowerBattery
+    {
+        get => GetInt("smartpower.battery", 40);
+        set => _store.Set("smartpower.battery", Math.Clamp(value, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    public int SmartPowerAc
+    {
+        get => GetInt("smartpower.ac", 70);
+        set => _store.Set("smartpower.ac", Math.Clamp(value, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>Re-apply the matching Smart Power position when switching between battery and AC.</summary>
+    public bool SmartPowerAuto
+    {
+        get => GetBool("smartpower.auto", false);
+        set => SetBool("smartpower.auto", value);
+    }
+
     public bool FirstRunCompleted
     {
         get => GetBool("shell.firstRunCompleted", false);
         set => SetBool("shell.firstRunCompleted", value);
     }
+
+    private int GetInt(string key, int fallback) =>
+        int.TryParse(_store.Get(key), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : fallback;
 
     private bool GetBool(string key, bool fallback) =>
         bool.TryParse(_store.Get(key), out var v) ? v : fallback;

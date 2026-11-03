@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lumen.Core.Tests", "tests\L
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lumen.Data.Tests", "tests\Lumen.Data.Tests\Lumen.Data.Tests.csproj", "{F37BE976-EEAA-4155-A256-1377B2A2CA11}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lumen.PowerHelper", "src\Lumen.PowerHelper\Lumen.PowerHelper.csproj", "{892AE691-F3D3-4B89-A2DB-BF43110F32FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -89,11 +91,20 @@ Global
 		{F37BE976-EEAA-4155-A256-1377B2A2CA11}.Release|x64.Build.0 = Release|Any CPU
 		{F37BE976-EEAA-4155-A256-1377B2A2CA11}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{F37BE976-EEAA-4155-A256-1377B2A2CA11}.Release|ARM64.Build.0 = Release|Any CPU
+		{892AE691-F3D3-4B89-A2DB-BF43110F32FD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{892AE691-F3D3-4B89-A2DB-BF43110F32FD}.Debug|x64.Build.0 = Debug|Any CPU
+		{892AE691-F3D3-4B89-A2DB-BF43110F32FD}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{892AE691-F3D3-4B89-A2DB-BF43110F32FD}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{892AE691-F3D3-4B89-A2DB-BF43110F32FD}.Release|x64.ActiveCfg = Release|Any CPU
+		{892AE691-F3D3-4B89-A2DB-BF43110F32FD}.Release|x64.Build.0 = Release|Any CPU
+		{892AE691-F3D3-4B89-A2DB-BF43110F32FD}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{892AE691-F3D3-4B89-A2DB-BF43110F32FD}.Release|ARM64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{892AE691-F3D3-4B89-A2DB-BF43110F32FD} = {57230E4F-4EF8-44AD-AE5F-D6C4764C7A03}
 		{848EC6BF-4DFE-4F14-B215-B61D4B8CE7BF} = {57230E4F-4EF8-44AD-AE5F-D6C4764C7A03}
 		{11563907-AAFB-49AA-8C8E-B9C23AB4CC46} = {57230E4F-4EF8-44AD-AE5F-D6C4764C7A03}
 		{CC62D9CE-A26C-4606-92A2-1B030B0BC2A1} = {57230E4F-4EF8-44AD-AE5F-D6C4764C7A03}

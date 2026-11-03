@@ -39,6 +39,9 @@
                         <TextBlock Text="Refresh rate" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
                         <StackPanel x:Name="RefreshOptions" Orientation="Horizontal" Spacing="8" />
 
+                        <TextBlock Text="Processor power (TDP)" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                        <StackPanel x:Name="TdpOptions" Orientation="Horizontal" Spacing="8" />
+
                         <TextBlock Text="Power plan" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
                         <StackPanel x:Name="PlanOptions" Orientation="Horizontal" Spacing="8" />
 
