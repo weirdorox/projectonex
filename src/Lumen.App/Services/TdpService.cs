@@ -44,10 +44,13 @@ public sealed class TdpService
         return Update(await _backend.GetStatusAsync());
     }
 
+    private double? _desired;
+
     public async Task<TdpStatus> SetAsync(double watts)
     {
         if (_backend is null) return Status;
         var s = Update(await _backend.SetAsync(watts));
+        if (s.Available && s.RequestedWatts == Math.Round(watts)) _desired = s.RequestedWatts;
         Log.Info($"TDP request {watts} W -> {s.Message ?? s.UnavailableReason}");
         return s;
     }
@@ -55,7 +58,23 @@ public sealed class TdpService
     public async Task<TdpStatus> RestoreAsync()
     {
         if (_backend is null) return Status;
+        _desired = null;
         return Update(await _backend.RestoreDefaultsAsync());
+    }
+
+    /// <summary>
+    /// After sleep: the helper may have idled out and restored firmware limits (or firmware reset them).
+    /// Re-assert the user's last limit so the game continues at the same power.
+    /// </summary>
+    public async Task ResumeAsync()
+    {
+        if (_backend is null || _desired is not { } want) return;
+        var s = await RefreshAsync();
+        if (s.Available && s.RequestedWatts != want)
+        {
+            Log.Info($"Re-applying TDP {want} W after resume.");
+            await _backend.SetAsync(want).ContinueWith(t => { if (t.IsCompletedSuccessfully) Update(t.Result); }, TaskScheduler.Default);
+        }
     }
 
     private TdpStatus Update(TdpStatus s)

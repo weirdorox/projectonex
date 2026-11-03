@@ -17,7 +17,7 @@ namespace Lumen.Platform.Windows.Input;
 public sealed class XInputGamepadSource : IGamepadSource
 {
     private const int SlotCount = 4;
-    private static readonly TimeSpan ReprobeInterval = TimeSpan.FromSeconds(2);
+    private readonly ReconnectPolicy _reconnect = new();
 
     private readonly bool[] _connected = new bool[SlotCount];
     private readonly GamepadState[] _states = new GamepadState[SlotCount];
@@ -29,14 +29,19 @@ public sealed class XInputGamepadSource : IGamepadSource
 
     public int ConnectedCount => _connected.Count(c => c);
 
-    public void Rescan() => _lastProbe = TimeSpan.MinValue;
+    /// <summary>Probe every slot now, then fast for a short burst (after wake/unlock).</summary>
+    public void Rescan()
+    {
+        _lastProbe = TimeSpan.MinValue;
+        _reconnect.Boost(_clock.Elapsed);
+    }
 
     public GamepadState Read()
     {
         if (!_available) return GamepadState.Disconnected;
 
         var now = _clock.Elapsed;
-        var probeAll = _lastProbe == TimeSpan.MinValue || now - _lastProbe >= ReprobeInterval;
+        var probeAll = _lastProbe == TimeSpan.MinValue || now - _lastProbe >= _reconnect.ProbeInterval(now);
         if (probeAll) _lastProbe = now;
 
         for (uint slot = 0; slot < SlotCount; slot++)

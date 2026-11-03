@@ -110,18 +110,54 @@ public sealed partial class LibraryPage : Page, IShellPage
 
     private void OnElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
     {
-        if (args.Element is GameTile tile) tile.Invoked += OnTileInvoked;
+        if (args.Element is GameTile tile)
+        {
+            tile.Invoked += OnTileInvoked;
+            tile.TileFocused += OnTileFocused;
+        }
     }
 
     private void OnElementClearing(ItemsRepeater sender, ItemsRepeaterElementClearingEventArgs args)
     {
-        if (args.Element is GameTile tile) tile.Invoked -= OnTileInvoked;
+        if (args.Element is GameTile tile)
+        {
+            tile.Invoked -= OnTileInvoked;
+            tile.TileFocused -= OnTileFocused;
+        }
     }
 
     private void OnTileInvoked(object? sender, GameTileViewModel vm) => GameActions.Launch(vm);
 
+    private string? _focusedId;
+    private DispatcherQueueTimer? _rememberTimer;
+
+    /// <summary>Remember the focused game (debounced so scrolling doesn't write to disk on every step).</summary>
+    private void OnTileFocused(object? sender, GameTileViewModel vm)
+    {
+        _focusedId = vm.Id;
+        if (_rememberTimer is null)
+        {
+            _rememberTimer = DispatcherQueue.CreateTimer();
+            _rememberTimer.IsRepeating = false;
+            _rememberTimer.Interval = TimeSpan.FromMilliseconds(800);
+            _rememberTimer.Tick += (_, _) => { if (_focusedId is { } id) Shell.RememberFocusedGame(id); };
+        }
+        _rememberTimer.Stop();
+        _rememberTimer.Start();
+    }
+
     public void FocusDefault()
     {
+        if (Shell.PendingFocusGameId is { } pending && GridRepeater.ItemsSource is IReadOnlyList<GameTileViewModel> tiles)
+        {
+            var index = tiles.ToList().FindIndex(t => string.Equals(t.Id, pending, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0 && GridRepeater.GetOrCreateElement(index) is GameTile restored)
+            {
+                Shell.PendingFocusGameId = null;
+                restored.StartBringIntoView();
+                if (restored.FocusTile()) return;
+            }
+        }
         if (GridRepeater.ItemsSourceView is { Count: > 0 })
         {
             var element = GridRepeater.TryGetElement(0) ?? GridRepeater.GetOrCreateElement(0);

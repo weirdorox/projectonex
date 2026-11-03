@@ -65,6 +65,7 @@ public sealed partial class MainWindow : Window
         _hook.RegisterToggleHotkey();
         _hook.HotkeyPressed += _ => ReturnToShell();
         _hook.SessionEnding += () => _host.Guard.MarkCleanExit();
+        _hook.SessionUnlocked += () => DispatcherQueue.TryEnqueue(OnResumed);
         _hook.DisplayChanged += () => DispatcherQueue.TryEnqueue(() =>
         {
             if (_wantFullscreen && DesktopSwitcher.IsForeground(_hwnd)) ApplyPresenter();
@@ -83,20 +84,12 @@ public sealed partial class MainWindow : Window
         _navigator.Start();
 
         // ---- power: sleep/resume and display on/off ----
-        host.Power.Suspending += (_, _) => DispatcherQueue.TryEnqueue(() =>
-        {
-            _navigator.Pause();
-            GameSessions?.Pause();
-        });
+        host.Power.Suspending += (_, _) => DispatcherQueue.TryEnqueue(PrepareForSleep);
         host.Power.Resumed += (_, _) => DispatcherQueue.TryEnqueue(OnResumed);
         host.Power.DisplayStateChanged += (_, on) => DispatcherQueue.TryEnqueue(() =>
         {
             if (on) OnResumed();
-            else
-            {
-                _navigator.Pause();
-                GameSessions?.Pause();
-            }
+            else PrepareForSleep();
         });
         host.Power.Start();
 
@@ -113,8 +106,10 @@ public sealed partial class MainWindow : Window
         UpdateControllerIcon();
 
         // ---- content ----
+        // Where you left off: last tab and last focused game survive restarts, crashes and reboots.
+        PendingFocusGameId = host.Settings.LastGameId;
         if (host.IsSafeMode) NavigateToSafeMode();
-        else NavigateTab(0);
+        else NavigateTab(Math.Clamp(host.Settings.LastTab, 0, 1));
 
         _ = StartLibraryAsync();
         _ = WarmUpHardwareAsync();
@@ -127,6 +122,15 @@ public sealed partial class MainWindow : Window
 
     /// <summary>Real TDP control (helper-backed; reports unavailability honestly).</summary>
     internal TdpService Tdp { get; }
+
+    /// <summary>Game to focus once its tile exists (session restore). Consumed by the first page that finds it.</summary>
+    internal string? PendingFocusGameId { get; set; }
+
+    /// <summary>Remembers the focused game for session restore.</summary>
+    internal void RememberFocusedGame(string gameId)
+    {
+        if (_host.Settings.LastGameId != gameId) _host.Settings.LastGameId = gameId;
+    }
 
     /// <summary>One-slider battery/performance control.</summary>
     internal SmartPowerService SmartPower { get; }
@@ -152,13 +156,17 @@ public sealed partial class MainWindow : Window
     {
         try
         {
+            // Only switch when the kind actually differs: re-setting the same presenter makes the
+            // window flash (noticeable on every wake).
             if (_wantFullscreen)
             {
-                AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+                if (AppWindow.Presenter.Kind != AppWindowPresenterKind.FullScreen)
+                    AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
             }
             else
             {
-                AppWindow.SetPresenter(AppWindowPresenterKind.Overlapped);
+                if (AppWindow.Presenter.Kind != AppWindowPresenterKind.Overlapped)
+                    AppWindow.SetPresenter(AppWindowPresenterKind.Overlapped);
                 if (AppWindow.Presenter is OverlappedPresenter p && p.State != OverlappedPresenterState.Maximized)
                     p.Maximize();
             }
@@ -243,6 +251,7 @@ public sealed partial class MainWindow : Window
             }
             : new SuppressNavigationTransitionInfo();
         _tab = index;
+        if (index <= 1) _host.Settings.LastTab = index;
         ContentFrame.Navigate(TabPages[index], null, transition);
         UpdateTabs();
         UpdateHints();
@@ -440,14 +449,61 @@ public sealed partial class MainWindow : Window
         ControllerIcon.Opacity = connected ? 1.0 : 0.5;
     }
 
+    private readonly System.Diagnostics.Stopwatch _uptime = System.Diagnostics.Stopwatch.StartNew();
+    private TimeSpan _lastResume = TimeSpan.MinValue;
+    private bool _sleeping;
+
+    /// <summary>
+    /// Display off / suspend: stop all polling and clear transient UI so the first frame after
+    /// wake is already the clean, final screen.
+    /// </summary>
+    private void PrepareForSleep()
+    {
+        _sleeping = true;
+        _navigator.Pause();
+        GameSessions?.Pause();
+        _overlay?.HideOverlay();
+        HideLaunchCurtain(animate: false);
+        Toast.Visibility = Visibility.Collapsed;
+        Log.Info("Prepared for sleep.");
+    }
+
+    /// <summary>
+    /// Wake / display on / unlock. Ordered for perceived speed: input first, then what is on screen,
+    /// then hardware re-assertion, then deferred work. Duplicate notifications within 2 s are ignored.
+    /// </summary>
     private void OnResumed()
     {
+        var now = _uptime.Elapsed;
+        if (!_sleeping && now - _lastResume < TimeSpan.FromSeconds(2)) return;
+        _lastResume = now;
+        _sleeping = false;
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+
+        // 1. Controller: fast re-probe burst, held buttons ignored.
         _navigator.Resume();
-        GameSessions?.Resume();
+
+        // 2. What the user sees first.
         UpdateClock();
         UpdateBattery();
         UpdateControllerIcon();
         if (_wantFullscreen && DesktopSwitcher.IsForeground(_hwnd)) ApplyPresenter();
+        var inputReady = timer.ElapsedMilliseconds;
+
+        void FirstFrame(object? s, object e)
+        {
+            Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= FirstFrame;
+            Log.Info($"Resume: input ready after {inputReady} ms, first frame after {timer.ElapsedMilliseconds} ms.");
+        }
+        Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += FirstFrame;
+
+        // 3. Hardware re-assertion off the critical path (drivers may reset display modes / power limits).
+        DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+        {
+            GameSessions?.Resume();
+            _ = Tdp.ResumeAsync();
+            if (Content.XamlRoot is { } root && FocusNavigation.Focused(root) is null) CurrentPage?.FocusDefault();
+        });
     }
 
     // =====================================================================================

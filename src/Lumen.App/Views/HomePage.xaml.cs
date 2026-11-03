@@ -143,6 +143,7 @@ public sealed partial class HomePage : Page, IShellPage
         var vm = _pendingHero;
         if (vm is null || vm == _shownHero) return;
         _shownHero = vm;
+        Shell.RememberFocusedGame(vm.Id);
 
         // Logo replaces the title text when the store provides one.
         var logo = GameTileViewModel.CreateBitmap(vm.LogoPath, 880);
@@ -189,12 +190,36 @@ public sealed partial class HomePage : Page, IShellPage
 
     public void FocusDefault()
     {
+        // Session restore: put focus back on the game the user was on.
+        if (Shell.PendingFocusGameId is { } pending && FocusGame(pending))
+        {
+            Shell.PendingFocusGameId = null;
+            return;
+        }
         foreach (var shelf in VisibleShelves())
         {
             if (FocusFirst(shelf)) return;
         }
         if (EmptyState.Visibility == Visibility.Visible) FocusNavigation.Focus(ScanButton);
         else if (Microsoft.UI.Xaml.Input.FocusManager.FindFirstFocusableElement(this) is { } first) FocusNavigation.Focus(first);
+    }
+
+    private bool FocusGame(string gameId)
+    {
+        foreach (var shelf in VisibleShelves())
+        {
+            if (shelf.ItemsSource is not IReadOnlyList<GameTileViewModel> tiles) continue;
+            for (var i = 0; i < tiles.Count; i++)
+            {
+                if (!string.Equals(tiles[i].Id, gameId, StringComparison.OrdinalIgnoreCase)) continue;
+                if (shelf.GetOrCreateElement(i) is GameTile tile)
+                {
+                    tile.StartBringIntoView();
+                    return tile.FocusTile();
+                }
+            }
+        }
+        return false;
     }
 
     private static bool FocusFirst(ItemsRepeater repeater)

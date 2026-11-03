@@ -78,6 +78,20 @@ public sealed class ShellSettings
         set => SetBool("smartpower.auto", value);
     }
 
+    /// <summary>Last main tab (Home/Library) - restored after restart, crash or reboot.</summary>
+    public int LastTab
+    {
+        get => GetInt("shell.lastTab", 0);
+        set => _store.Set("shell.lastTab", value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>Last focused game - restored after restart, crash or reboot.</summary>
+    public string? LastGameId
+    {
+        get => _store.Get("shell.lastGame");
+        set => _store.Set("shell.lastGame", value);
+    }
+
     public bool FirstRunCompleted
     {
         get => GetBool("shell.firstRunCompleted", false);

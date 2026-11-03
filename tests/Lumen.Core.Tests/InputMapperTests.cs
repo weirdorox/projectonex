@@ -156,3 +156,18 @@ public class InputMapperTests
         Assert.False(GamepadState.Merge([]).IsConnected);
     }
 }
+
+public class ReconnectPolicyTests
+{
+    [Fact]
+    public void Fast_probing_only_during_burst_after_wake()
+    {
+        var p = new ReconnectPolicy();
+        var t0 = TimeSpan.FromMinutes(10);
+        Assert.Equal(TimeSpan.FromSeconds(2), p.ProbeInterval(t0));
+        p.Boost(t0);
+        Assert.Equal(TimeSpan.FromMilliseconds(250), p.ProbeInterval(t0 + TimeSpan.FromSeconds(1)));
+        Assert.True(p.InBurst(t0 + TimeSpan.FromSeconds(14)));
+        Assert.Equal(TimeSpan.FromSeconds(2), p.ProbeInterval(t0 + TimeSpan.FromSeconds(15)));
+    }
+}

@@ -20,6 +20,20 @@ public sealed class WindowMessageHook : IDisposable
     public event Action<int>? HotkeyPressed;
     public event Action? SessionEnding;
     public event Action? DisplayChanged;
+    public event Action? SessionUnlocked;
+
+    private const uint WM_WTSSESSION_CHANGE = 0x02B1;
+    private const int WTS_SESSION_UNLOCK = 0x8;
+
+    [DllImport("wtsapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool WTSRegisterSessionNotification(IntPtr hWnd, int flags);
+
+    [DllImport("wtsapi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool WTSUnRegisterSessionNotification(IntPtr hWnd);
+
+    private bool _sessionNotifications;
 
     public WindowMessageHook(IntPtr hwnd)
     {
@@ -28,6 +42,7 @@ public sealed class WindowMessageHook : IDisposable
         _previous = SetWindowLongPtr(hwnd, GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate(_proc));
         if (_previous == IntPtr.Zero)
             Log.Warn($"Window subclassing failed (error {Marshal.GetLastWin32Error()}).");
+        _sessionNotifications = WTSRegisterSessionNotification(hwnd, 0 /* NOTIFY_FOR_THIS_SESSION */);
     }
 
     /// <summary>Registers Ctrl+Alt+Home (configurable later) as a global "show Lumen" hotkey.</summary>
@@ -54,6 +69,9 @@ public sealed class WindowMessageHook : IDisposable
                 case WM_DISPLAYCHANGE:
                     DisplayChanged?.Invoke();
                     break;
+                case WM_WTSSESSION_CHANGE when wParam.ToInt32() == WTS_SESSION_UNLOCK:
+                    SessionUnlocked?.Invoke();
+                    break;
             }
         }
         catch (Exception ex)
@@ -65,6 +83,8 @@ public sealed class WindowMessageHook : IDisposable
 
     public void Dispose()
     {
+        if (_sessionNotifications) WTSUnRegisterSessionNotification(_hwnd);
+        _sessionNotifications = false;
         if (_hotkeyRegistered) UnregisterHotKey(_hwnd, ToggleHotkeyId);
         _hotkeyRegistered = false;
         if (_previous != IntPtr.Zero)
