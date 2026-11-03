@@ -159,6 +159,22 @@ public sealed class ShellSettings
         set => _store.Set("home.pinnedCollection", value ?? "");
     }
 
+    // ---- Steam account ----
+
+    /// <summary>Steam Web API key, encrypted for this Windows user (DPAPI), base64.</summary>
+    public string? SteamApiKeyProtected
+    {
+        get => _store.Get("steam.apiKey") is { Length: > 0 } v ? v : null;
+        set => _store.Set("steam.apiKey", value ?? "");
+    }
+
+    /// <summary>Show owned Steam games that are not installed (with an Install action).</summary>
+    public bool SteamShowOwned
+    {
+        get => GetBool("steam.showOwned", true);
+        set => SetBool("steam.showOwned", value);
+    }
+
     public bool FirstRunCompleted
     {
         get => GetBool("shell.firstRunCompleted", false);

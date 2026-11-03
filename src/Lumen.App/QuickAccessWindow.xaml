@@ -88,6 +88,8 @@
                     </Grid>
                     <Slider x:Name="BrightnessSlider" Minimum="5" Maximum="100" StepFrequency="5" ValueChanged="OnBrightnessChanged"
                             AutomationProperties.Name="Brightness" />
+                    <TextBlock x:Name="BrightnessNote" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" Visibility="Collapsed"
+                               Text="Brightness can't be changed on this display. For a monitor, turn on DDC/CI in its own on-screen menu (many TVs don't support it)." />
                 </StackPanel>
 
                 <!-- Refresh rate -->
@@ -278,6 +280,24 @@
 
                     <TextBlock Text="Connections" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
                     <ToggleSwitch x:Name="WifiToggle" Header="Wi-Fi" Toggled="OnWifiToggled" Visibility="Collapsed" />
+                    <StackPanel x:Name="WifiSection" Spacing="8">
+                        <Button x:Name="WifiScanButton" Content="Wi-Fi networks…" Click="OnWifiScanClick" HorizontalAlignment="Stretch" />
+                        <TextBlock x:Name="WifiStatusText" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" Visibility="Collapsed" />
+                        <StackPanel x:Name="WifiList" Spacing="6" />
+                        <StackPanel x:Name="WifiPasswordPanel" Spacing="8" Visibility="Collapsed">
+                            <TextBlock x:Name="WifiPasswordTitle" Style="{StaticResource LumenBodyText}" TextWrapping="Wrap" />
+                            <PasswordBox x:Name="WifiPasswordBox" MaxLength="63" IsTabStop="False" PasswordRevealMode="Peek" />
+                            <Border x:Name="WifiKeyboardHost" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="WifiConnectButton" Content="Connect" Click="OnWifiConnectClick" HorizontalAlignment="Stretch" Style="{StaticResource LumenAccentButtonStyle}" />
+                                <Button Grid.Column="1" Content="Cancel" Click="OnWifiCancelClick" HorizontalAlignment="Stretch" />
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
                     <ToggleSwitch x:Name="BluetoothToggle" Header="Bluetooth" Toggled="OnBluetoothToggled" Visibility="Collapsed" />
                     <TextBlock x:Name="RadiosUnavailableText" Style="{StaticResource LumenCaptionText}" Visibility="Collapsed"
                                Text="Wi-Fi/Bluetooth switches are unavailable (no radio found, or radio access is off in Windows privacy settings)." />

@@ -151,14 +151,18 @@ public sealed partial class QuickAccessWindow
 
         _hdrTarget = DockDetector.Target(displays) ?? displays.FirstOrDefault(d => d.IsPrimary) ?? displays.FirstOrDefault();
         var target = _hdrTarget;
-        HdrSection.Visibility = target is { HdrSupported: true } ? Visibility.Visible : Visibility.Collapsed;
-        if (target is null) return;
-        HdrToggle.Header = displays.Count > 1 ? $"HDR · {target.Name}" : "HDR";
-        HdrToggle.IsOn = target.HdrEnabled;
-        HdrToggle.IsEnabled = !target.HdrForceDisabled;
-        HdrNote.Text = target.HdrForceDisabled
-            ? "Windows is blocking HDR right now (for example HDR is off on battery in Windows display settings)."
-            : "Uses the Windows HDR switch. Games decide themselves whether they output HDR.";
+        // Always shown so HDR is easy to find; disabled with the reason when it can't be switched.
+        HdrSection.Visibility = Visibility.Visible;
+        HdrToggle.Header = target is not null && displays.Count > 1 ? $"HDR · {target.Name}" : "HDR";
+        HdrToggle.IsOn = target?.HdrEnabled == true;
+        HdrToggle.IsEnabled = target is { HdrSupported: true, HdrForceDisabled: false };
+        HdrNote.Text = target is null
+            ? "No display information available."
+            : !target.HdrSupported
+                ? $"{target.Name} does not report HDR support to Windows. For an HDR monitor/TV, check its HDR/input setting and the cable (HDMI 2.0+/DisplayPort)."
+                : target.HdrForceDisabled
+                    ? "Windows is blocking HDR right now (for example HDR is off on battery in Windows display settings)."
+                    : "Uses the Windows HDR switch. Games decide themselves whether they output HDR.";
     }
 
     private void OnHdrToggled(object sender, RoutedEventArgs e)

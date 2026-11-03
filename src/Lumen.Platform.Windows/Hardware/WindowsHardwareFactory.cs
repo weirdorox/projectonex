@@ -20,7 +20,7 @@ public static class WindowsHardwareFactory
             Battery: Try("battery", () => new Win32BatteryInfo()),
             BatteryTelemetry: Try("battery telemetry", AggregateBatteryTelemetry.TryCreate),
             Volume: Try("volume", CoreAudioVolumeControl.TryCreate),
-            Brightness: Try("brightness", WmiBrightnessControl.TryCreate),
+            Brightness: Try("brightness", CombinedBrightnessControl.TryCreate),
             Display: Try("display", () => new DisplayModeControl()),
             Resolution: Try("resolution", () => new DisplayModeControl()),
             Displays: Try("display topology", DisplayTopology.TryCreate),

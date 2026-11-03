@@ -67,6 +67,7 @@ public sealed class GameTileViewModel : ObservableObject
         get
         {
             var parts = new List<string> { SourceLabel };
+            if (!_game.IsInstalled) parts.Add("Not installed - A to install");
             if (_game.LastPlayed is { } lp) parts.Add("Played " + Humanize(lp));
             if (_game.PlaytimeSeconds >= 60) parts.Add($"{TimeSpan.FromSeconds(_game.PlaytimeSeconds).TotalHours:0.#} h");
             return string.Join("  ·  ", parts);

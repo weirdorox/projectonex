@@ -5,80 +5,112 @@ namespace Lumen.App.Controls;
 
 /// <summary>
 /// Controller-first on-screen keyboard (no Windows touch keyboard needed): a grid of large keys that
-/// the D-pad moves across and A presses. Edits a target <see cref="TextBox"/> directly.
+/// the D-pad moves across and A presses. Edits a target <see cref="TextBox"/> (or
+/// <see cref="PasswordBox"/>) directly. Shift for capitals, "#+=" for symbols (Wi-Fi passwords).
 /// Shortcuts handled by the host page: X = backspace, Y = space.
 /// </summary>
 public sealed class OnScreenKeyboard : StackPanel
 {
     private static readonly string[] Rows = ["1234567890", "qwertyuiop", "asdfghjkl'", "zxcvbnm-:."];
-    private readonly List<Button> _letters = [];
+    private static readonly string[] SymbolRows = ["!@#$%^&*()", "~`_=+[]{}|", "\;\"<>?/,'é", "€£§°±µ¿¡«»"];
+    private readonly List<(Button Key, int Row, int Col)> _keys = [];
+    private readonly Button _shiftKey;
+    private readonly Button _symbolKey;
     private bool _shift;
+    private bool _symbols;
 
-    public OnScreenKeyboard()
+    public OnScreenKeyboard() : this(48) { }
+
+    public OnScreenKeyboard(double keyWidth)
     {
         Spacing = 6;
-        foreach (var row in Rows)
+        for (var r = 0; r < Rows.Length; r++)
         {
             var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            foreach (var ch in row)
+            for (var c = 0; c < Rows[r].Length; c++)
             {
-                var key = MakeKey(ch.ToString(), 48);
-                var c = ch;
-                key.Click += (_, _) => Type(_shift ? char.ToUpperInvariant(c).ToString() : c.ToString());
-                if (char.IsLetter(ch)) _letters.Add(key);
+                var key = MakeKey("", keyWidth);
+                key.Click += (s, _) => TypeKey((string)((Button)s!).Content);
+                _keys.Add((key, r, c));
                 panel.Children.Add(key);
             }
             Children.Add(panel);
         }
 
         var bottom = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        var shift = MakeKey("⇧", 72);
-        shift.Click += (_, _) => ToggleShift();
-        var space = MakeKey("space", 180);
+        _shiftKey = MakeKey("⇧", keyWidth * 1.3);
+        _shiftKey.Click += (_, _) => { _shift = !_shift; Relabel(); };
+        _symbolKey = MakeKey("#+=", keyWidth * 1.3);
+        _symbolKey.Click += (_, _) => { _symbols = !_symbols; Relabel(); };
+        var space = MakeKey("space", keyWidth * 2.6);
         space.Click += (_, _) => Type(" ");
-        var back = MakeKey("⌫", 72);
+        var back = MakeKey("⌫", keyWidth * 1.3);
         back.Click += (_, _) => Backspace();
-        var clear = MakeKey("clear", 90);
-        clear.Click += (_, _) => { if (Target is not null) Target.Text = string.Empty; };
-        var done = MakeKey("done", 90);
+        var done = MakeKey("done", keyWidth * 1.7);
         done.Click += (_, _) => Done?.Invoke(this, EventArgs.Empty);
-        foreach (var b in new[] { shift, space, back, clear, done }) bottom.Children.Add(b);
+        foreach (var b in new[] { _shiftKey, _symbolKey, space, back, done }) bottom.Children.Add(b);
         Children.Add(bottom);
-        FirstKey = (Button)((StackPanel)Children[1]).Children[0];
+        FirstKey = _keys.First(k => k.Row == 1 && k.Col == 0).Key;
+        Relabel();
     }
 
-    public TextBox? Target { get; set; }
+    /// <summary>A TextBox or PasswordBox.</summary>
+    public Control? Target { get; set; }
 
     /// <summary>The 'q' key - a sensible place for initial focus.</summary>
     public Button FirstKey { get; }
 
     public event EventHandler? Done;
 
+    private string Text
+    {
+        get => Target switch { TextBox t => t.Text ?? "", PasswordBox p => p.Password ?? "", _ => "" };
+        set
+        {
+            switch (Target)
+            {
+                case TextBox t:
+                    t.Text = value;
+                    t.SelectionStart = value.Length;
+                    break;
+                case PasswordBox p:
+                    p.Password = value;
+                    break;
+            }
+        }
+    }
+
+    private int MaxLength => Target switch { TextBox { MaxLength: > 0 } t => t.MaxLength, PasswordBox { MaxLength: > 0 } p => p.MaxLength, _ => 64 };
+
     public void Type(string text)
     {
         if (Target is null) return;
-        var t = Target.Text ?? string.Empty;
-        if (t.Length + text.Length > (Target.MaxLength > 0 ? Target.MaxLength : 64)) return;
-        Target.Text = t + text;
-        Target.SelectionStart = Target.Text.Length;
-        if (_shift) ToggleShift();
+        var t = Text;
+        if (t.Length + text.Length > MaxLength) return;
+        Text = t + text;
+    }
+
+    private void TypeKey(string text)
+    {
+        Type(text);
+        if (_shift && !_symbols) { _shift = false; Relabel(); }
     }
 
     public void Backspace()
     {
-        if (Target is null || string.IsNullOrEmpty(Target.Text)) return;
-        Target.Text = Target.Text[..^1];
-        Target.SelectionStart = Target.Text.Length;
+        var t = Text;
+        if (t.Length > 0) Text = t[..^1];
     }
 
-    private void ToggleShift()
+    private void Relabel()
     {
-        _shift = !_shift;
-        foreach (var b in _letters)
+        foreach (var (key, row, col) in _keys)
         {
-            var s = (string)b.Content;
-            b.Content = _shift ? s.ToUpperInvariant() : s.ToLowerInvariant();
+            var ch = (_symbols ? SymbolRows : Rows)[row][col].ToString();
+            key.Content = _shift && !_symbols ? ch.ToUpperInvariant() : ch;
         }
+        _symbolKey.Content = _symbols ? "abc" : "#+=";
+        _shiftKey.Opacity = _shift ? 1 : 0.75;
     }
 
     private static Button MakeKey(string label, double width) => new()

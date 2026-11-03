@@ -22,6 +22,7 @@ public sealed class LibraryStore
     {
         _host = host;
         _ui = ui;
+        Steam = new SteamOnlineService(host);
     }
 
     /// <summary>Raised on the UI thread whenever the game list changes.</summary>
@@ -62,14 +63,25 @@ public sealed class LibraryStore
     }
 
     /// <summary>Scans all sources in the background, then reloads.</summary>
+    public SteamOnlineService Steam { get; }
+
     public async Task<ScanReport?> RescanAsync()
     {
         if (_scanning) return null;
         _scanning = true;
         try
         {
+            if (!_host.IsSafeMode) await Steam.RefreshAsync(); // owned list, at most every 6 h
             var report = await Task.Run(() => _host.Library.ScanAsync());
             await LoadAsync();
+
+            // Store artwork for games whose cover isn't in Steam's local cache (e.g. new releases
+            // with hashed asset paths): look it up once, then rescan so tiles pick it up.
+            if (!_host.IsSafeMode && await Steam.ResolveArtworkAsync(_host.Steam.MissingArtwork))
+            {
+                await Task.Run(() => _host.Library.ScanAsync());
+                await LoadAsync();
+            }
             return report;
         }
         catch (Exception ex)
@@ -97,7 +109,13 @@ public sealed class LibraryStore
 
     public async Task<LaunchResult> LaunchAsync(GameEntry game)
     {
-        if (!game.IsInstalled) return LaunchResult.Fail($"{game.Title} is not installed.");
+        if (!game.IsInstalled)
+        {
+            // Owned Steam game: hand over to Steam's own installer.
+            if (game.Source == GameSource.Steam && game.Launch.Target.StartsWith("steam://install/", StringComparison.Ordinal))
+                return await Task.Run(() => _host.Launcher.Launch(game.Launch));
+            return LaunchResult.Fail($"{game.Title} is not installed.");
+        }
 
         var result = await Task.Run(() => _host.Launcher.Launch(game.Launch));
         if (!result.Success) return result;

@@ -30,9 +30,11 @@ public sealed partial class LibraryPage : Page, IShellPage
         new("Battle.net", g => g.Source == GameSource.BattleNet),
         new("Folders", g => g.Source is GameSource.Folder or GameSource.Manual),
         new("Hidden", g => g.IsHidden),
+        new("Not installed", g => !g.IsInstalled),
     ];
 
     private bool ShowingHidden => Filters[_filter].Label == "Hidden";
+    private bool ShowingNotInstalled => Filters[_filter].Label == "Not installed";
 
     private readonly List<Button> _pills = [];
     private int _filter;
@@ -89,7 +91,11 @@ public sealed partial class LibraryPage : Page, IShellPage
     {
         var all = ShowingHidden
             ? Shell.Library.Games.Where(g => g.IsInstalled && g.IsHidden).OrderBy(g => g.SortTitle, StringComparer.Ordinal).ToList()
-            : LibraryService.AllVisible(Shell.Library.Games);
+            : ShowingNotInstalled
+                ? Shell.Library.Games.Where(g => Shell.Library.Steam.IsSignedIn && Shell.Host.Settings.SteamShowOwned
+                        && !g.IsInstalled && !g.IsHidden && g.Launch.Target.StartsWith("steam://install/", StringComparison.Ordinal))
+                    .OrderBy(g => g.SortTitle, StringComparer.Ordinal).ToList()
+                : LibraryService.AllVisible(Shell.Library.Games);
         var games = all.Where(Filters[_filter].Predicate).ToList();
 
         var accent = (Brush)Application.Current.Resources["LumenAccentBrush"];
@@ -104,7 +110,9 @@ public sealed partial class LibraryPage : Page, IShellPage
 
         CountText.Text = games.Count == 1 ? "1 game" : $"{games.Count} games";
         EmptyText.Visibility = games.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        EmptyText.Text = Shell.Library.IsScanning ? "Looking for games…" : "Nothing here yet.";
+        EmptyText.Text = Shell.Library.IsScanning ? "Looking for games…"
+            : ShowingNotInstalled ? "Sign in to Steam in Settings to see games you own but haven't installed."
+            : "Nothing here yet.";
 
         var key = _filter + ":" + string.Join('|', games.Select(g => g.Id + (g.IsFavorite ? "*" : "")));
         if (key == _key)

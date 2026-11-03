@@ -21,6 +21,27 @@
                 </StackPanel>
             </Border>
 
+            <!-- ================= Steam account ================= -->
+            <TextBlock Text="Steam account" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Name="SteamStatusText" Style="{StaticResource LumenBodyText}" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap"
+                               Text="Shows every game you own, including ones that aren't installed (A installs them through Steam). You sign in on Steam's own page - Lumen never sees your password. Loading the game list also needs a free Steam Web API key, which you create once on Steam's site, and your profile's &quot;Game details&quot; must be public. The key is stored encrypted for your Windows account." />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button x:Name="SteamSignInButton" Content="1. Sign in through Steam" Click="OnSteamSignInClick" Style="{StaticResource LumenAccentButtonStyle}" />
+                        <Button x:Name="SteamKeyButton" Content="2. Get API key" Click="OnSteamKeyClick" />
+                        <Button x:Name="SteamRefreshButton" Content="Refresh library" Click="OnSteamRefreshClick" />
+                        <Button x:Name="SteamSignOutButton" Content="Sign out" Click="OnSteamSignOutClick" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBox x:Name="SteamKeyBox" PlaceholderText="…or paste the 32-character key here" Width="420" MaxLength="40" />
+                        <Button Content="Save key" Click="OnSteamSaveKeyClick" />
+                    </StackPanel>
+                    <ToggleSwitch x:Name="SteamOwnedToggle" Header="Show games I own but haven't installed (Library › Not installed)" Toggled="OnSteamOwnedToggled" />
+                </StackPanel>
+            </Border>
+
             <!-- ================= Personalization ================= -->
             <TextBlock Text="Personalization" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
             <Border Style="{StaticResource LumenCardStyle}">

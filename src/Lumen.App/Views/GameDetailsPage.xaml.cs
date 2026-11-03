@@ -73,6 +73,7 @@ public sealed partial class GameDetailsPage : Page, IShellPage
         Logo.Visibility = logo is null ? Visibility.Collapsed : Visibility.Visible;
         TitleText.Visibility = logo is null ? Visibility.Visible : Visibility.Collapsed;
         RenderFavorite(game);
+        PlayText.Text = game.IsInstalled ? "Play" : "Install with Steam";
         _ = RenderStatsAsync(game.Id);
         _ = RenderCollectionsAsync(game.Id);
         DetailsText.Text = string.Join(Environment.NewLine, new[]

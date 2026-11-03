@@ -23,7 +23,7 @@
                     <Button x:Name="PlayButton" Style="{StaticResource LumenAccentButtonStyle}" Click="OnPlayClick" MinWidth="160">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE768;" FontSize="16" />
-                            <TextBlock Text="Play" />
+                            <TextBlock x:Name="PlayText" Text="Play" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="FavoriteButton" Click="OnFavoriteClick" />

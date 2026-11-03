@@ -33,6 +33,8 @@ public sealed class AppHost
     public required IGameRepository Games { get; init; }
     public required IProfileRepository Profiles { get; init; }
     public required ICollectionRepository Collections { get; init; }
+    public required SteamScanner Steam { get; init; }
+    public required SteamWebCache SteamWeb { get; init; }
     public required Lumen.Core.Activity.IPlaySessionRepository History { get; init; }
     public required LibraryService Library { get; init; }
     public required GameLauncher Launcher { get; init; }
@@ -106,9 +108,12 @@ public sealed class AppHost
         Log.Phase("database ready");
 
         var registry = WindowsRegistryReader.Instance;
+        var steamWeb = new SteamWebCache(Path.Combine(paths.Root, "steam-web.json"));
+        var steamScanner = new SteamScanner(registry, allowOnlineArtwork: settings.AllowOnlineArtwork,
+            web: steamWeb, includeOwned: () => settings.SteamShowOwned && steamWeb.SteamId is not null);
         IGameScanner[] scanners =
         [
-            new SteamScanner(registry, allowOnlineArtwork: settings.AllowOnlineArtwork),
+            steamScanner,
             new EpicScanner(registry),
             new GogScanner(registry, settings.PreferGogGalaxy),
             new XboxScanner(),
@@ -131,6 +136,8 @@ public sealed class AppHost
             Collections = collections,
             History = history,
             Library = new LibraryService(games, scanners),
+            Steam = steamScanner,
+            SteamWeb = steamWeb,
             Launcher = new GameLauncher(),
             Sessions = new PlaySessionTracker(),
             Gamepad = new XInputGamepadSource(),

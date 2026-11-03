@@ -19,6 +19,13 @@ public static class GameActions
         _lastLaunchId = tile.Id;
         _lastLaunchAt = DateTime.UtcNow;
 
+        if (!tile.Game.IsInstalled)
+        {
+            var install = await shell.Library.LaunchAsync(tile.Game);
+            shell.ShowToast(install.Success ? $"Opening Steam to install {tile.Title}" : $"Couldn't install {tile.Title}: {install.Error}");
+            return;
+        }
+
         try
         {
             shell.ShowLaunchCurtain(tile);

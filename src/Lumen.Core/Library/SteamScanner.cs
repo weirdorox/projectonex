@@ -28,13 +28,21 @@ public sealed class SteamScanner : IGameScanner
     private readonly IRegistryReader _registry;
     private readonly string? _steamPathOverride;
     private readonly bool _allowOnlineArtwork;
+    private readonly SteamWebCache? _web;
+    private readonly Func<bool> _includeOwned;
 
-    public SteamScanner(IRegistryReader registry, string? steamPathOverride = null, bool allowOnlineArtwork = true)
+    public SteamScanner(IRegistryReader registry, string? steamPathOverride = null, bool allowOnlineArtwork = true,
+        SteamWebCache? web = null, Func<bool>? includeOwned = null)
     {
         _registry = registry;
         _steamPathOverride = steamPathOverride;
         _allowOnlineArtwork = allowOnlineArtwork;
+        _web = web;
+        _includeOwned = includeOwned ?? (() => false);
     }
+
+    /// <summary>App ids from the last scan without local cover art (the app may look them up online).</summary>
+    public IReadOnlyList<string> MissingArtwork { get; private set; } = [];
 
     public GameSource Source => GameSource.Steam;
     public string DisplayName => "Steam";
@@ -97,6 +105,36 @@ public sealed class SteamScanner : IGameScanner
         }
 
         Log.Info($"Steam: found {results.Count} installed games.");
+
+        // Owned but not installed (signed in to Steam in Lumen): shown with an Install action that
+        // hands over to the Steam client.
+        if (_web is not null && _includeOwned())
+        {
+            var owned = 0;
+            foreach (var game in _web.Owned)
+            {
+                if (seen.Contains(game.AppId) || ExcludedAppIds.Contains(game.AppId)) continue;
+                if (ExcludedNamePrefixes.Any(p => game.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase))) continue;
+                seen.Add(game.AppId);
+                owned++;
+                results.Add(new GameEntry
+                {
+                    Id = GameEntry.MakeId(GameSource.Steam, game.AppId),
+                    Source = GameSource.Steam,
+                    ExternalId = game.AppId,
+                    Title = game.Name,
+                    Launch = new LaunchSpec(LaunchKind.Uri, $"steam://install/{game.AppId}"),
+                    Artwork = FindArtwork(steam, game.AppId, _allowOnlineArtwork, _web),
+                    LastPlayed = game.LastPlayed,
+                    IsInstalled = false,
+                });
+            }
+            Log.Info($"Steam: {owned} owned games not installed.");
+        }
+
+        MissingArtwork = results
+            .Where(g => g.Artwork.Cover is null || g.Artwork.Cover.StartsWith(UnhashedCdn, StringComparison.Ordinal))
+            .Select(g => g.ExternalId).ToList();
         return results;
     }
 
@@ -164,7 +202,7 @@ public sealed class SteamScanner : IGameScanner
             Title = name.Trim(),
             InstallPath = installPath,
             Launch = new LaunchSpec(LaunchKind.Uri, $"steam://rungameid/{appId}"),
-            Artwork = FindArtwork(steamPath, appId, _allowOnlineArtwork),
+            Artwork = FindArtwork(steamPath, appId, _allowOnlineArtwork, _web),
             LastPlayed = lastPlayed,
         };
     }
@@ -174,7 +212,9 @@ public sealed class SteamScanner : IGameScanner
     /// ("{appid}_library_600x900.jpg"); newer clients use per-app folders, sometimes with hashed
     /// sub-folders. Falls back to the public Steam CDN if allowed.
     /// </summary>
-    internal static ArtworkSet FindArtwork(string steamPath, string appId, bool allowOnline)
+    internal const string UnhashedCdn = "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps";
+
+    internal static ArtworkSet FindArtwork(string steamPath, string appId, bool allowOnline, SteamWebCache? web = null)
     {
         var cache = Path.Combine(steamPath, "appcache", "librarycache");
 
@@ -187,23 +227,34 @@ public sealed class SteamScanner : IGameScanner
             {
                 try
                 {
-                    return Directory.EnumerateFiles(dir, nestedName, SearchOption.AllDirectories).FirstOrDefault();
+                    // Exact name first (e.g. library_hero.jpg), then variants (_2x) - never the blurred copy.
+                    return Directory.EnumerateFiles(dir, flatName, SearchOption.AllDirectories).FirstOrDefault()
+                        ?? Directory.EnumerateFiles(dir, nestedName, SearchOption.AllDirectories)
+                            .FirstOrDefault(f => !Path.GetFileName(f).Contains("blur", StringComparison.OrdinalIgnoreCase));
                 }
                 catch { /* ignore */ }
             }
             return null;
         }
 
-        var cover = Find("library_600x900.jpg", "library_600x900.jpg");
-        var hero = Find("library_hero.jpg", "library_hero.jpg");
-        var logo = Find("logo.png", "logo.png");
-        var header = Find("header.jpg", "header.jpg");
+        var cover = Find("library_600x900.jpg", "library_600x900*.jpg") ?? Find("library_capsule.jpg", "library_capsule*.jpg");
+        var hero = Find("library_hero.jpg", "library_hero*.jpg");
+        var logo = Find("logo.png", "logo*.png");
+        var header = Find("header.jpg", "header*.jpg");
 
         if (allowOnline)
         {
-            const string cdn = "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps";
-            cover ??= $"{cdn}/{appId}/library_600x900.jpg";
-            hero ??= $"{cdn}/{appId}/library_hero.jpg";
+            // Steam's store service knows the real (often hashed) asset paths of newer games.
+            if (web?.Assets(appId) is { } a)
+            {
+                cover ??= a.Capsule;
+                hero ??= a.Hero;
+                logo ??= a.Logo;
+                header ??= a.Header;
+            }
+            cover ??= $"{UnhashedCdn}/{appId}/library_600x900.jpg";
+            hero ??= $"{UnhashedCdn}/{appId}/library_hero.jpg";
+            header ??= $"{UnhashedCdn}/{appId}/header.jpg";
         }
 
         return new ArtworkSet(Cover: cover, Hero: hero ?? header, Logo: logo, Icon: header);

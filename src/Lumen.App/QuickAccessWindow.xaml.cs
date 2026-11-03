@@ -200,7 +200,10 @@ public sealed partial class QuickAccessWindow : Window
 
             // Brightness
             var brightness = _hw.Brightness?.GetBrightness();
-            BrightnessSection.Visibility = brightness is null ? Visibility.Collapsed : Visibility.Visible;
+            BrightnessSection.Visibility = Visibility.Visible;
+            BrightnessSlider.IsEnabled = brightness is not null;
+            BrightnessNote.Visibility = brightness is null ? Visibility.Visible : Visibility.Collapsed;
+            if (brightness is null) BrightnessValue.Text = "—";
             if (brightness is { } br)
             {
                 BrightnessSlider.Value = Math.Max(BrightnessSlider.Minimum, br);

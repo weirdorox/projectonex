@@ -84,7 +84,7 @@ public sealed class LibraryService
                 }
                 else
                 {
-                    toWrite.Add(found with { AddedAt = DateTimeOffset.UtcNow, IsInstalled = true });
+                    toWrite.Add(found with { AddedAt = DateTimeOffset.UtcNow });
                     added++;
                 }
             }
@@ -130,7 +130,7 @@ public sealed class LibraryService
             Launch = found.Launch,
             InstallPath = found.InstallPath,
             Artwork = found.Artwork,
-            IsInstalled = true,
+            IsInstalled = found.IsInstalled, // owned-but-not-installed entries report false
             LastPlayed = lastPlayed,
         };
     }
