@@ -7,6 +7,22 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!-- Accent overrides for built-in controls (sliders, toggles) -->
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFFF8A3D" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E6FF8A3D" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#CCFF8A3D" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF0A0C11" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Default">
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFFF8A3D" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E6FF8A3D" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#CCFF8A3D" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF0A0C11" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
     <!-- ===== Palette ===== -->
     <Color x:Key="LumenInk">#FF0A0C11</Color>
     <Color x:Key="LumenSurfaceColor">#FF141821</Color>
@@ -47,21 +63,6 @@
         <GradientStop Color="#E60A0C11" Offset="1" />
     </LinearGradientBrush>
 
-    <!-- Accent overrides for built-in controls (sliders, toggles) -->
-    <ResourceDictionary.ThemeDictionaries>
-        <ResourceDictionary x:Key="Dark">
-            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFFF8A3D" />
-            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E6FF8A3D" />
-            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#CCFF8A3D" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF0A0C11" />
-        </ResourceDictionary>
-        <ResourceDictionary x:Key="Default">
-            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFFF8A3D" />
-            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E6FF8A3D" />
-            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#CCFF8A3D" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF0A0C11" />
-        </ResourceDictionary>
-    </ResourceDictionary.ThemeDictionaries>
 
     <!-- ===== Metrics (effective pixels; tuned for 1920x1200 @150% = 1280x800 epx) ===== -->
     <x:Double x:Key="TileWidth">176</x:Double>
