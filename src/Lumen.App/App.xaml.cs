@@ -24,6 +24,17 @@ public partial class App : Application
         UnhandledException += OnXamlUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             Log.Fatal("Unhandled exception (process terminating).", e.ExceptionObject as Exception);
+        // Start-up diagnostics: a crash inside a dispatcher callback ends the process natively
+        // (0xc000027b) without reaching the handlers above, so record every exception thrown during
+        // the first 30 seconds - including ones that are caught - to find the culprit.
+        var startupClock = System.Diagnostics.Stopwatch.StartNew();
+        var firstChanceCount = 0;
+        AppDomain.CurrentDomain.FirstChanceException += (_, e) =>
+        {
+            if (startupClock.Elapsed > TimeSpan.FromSeconds(30) || Interlocked.Increment(ref firstChanceCount) > 60) return;
+            try { Log.Warn($"[first-chance] {e.Exception.GetType().Name}: {e.Exception.Message}{Environment.NewLine}{new System.Diagnostics.StackTrace(1, true)}"); }
+            catch { /* never throw from here */ }
+        };
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
             Log.Error("Unobserved task exception.", e.Exception);

@@ -445,7 +445,7 @@ public sealed partial class MainWindow : Window
         _lastSource = status.Source;
 
         var profile = PowerPolicy.Choose(status);
-        _navigator.SetProfile(profile);
+        _navigator?.SetProfile(profile); // Activated can fire before the constructor finished
         Motion.PowerAllows = profile.AnimationsEnabled;
         GameSessions?.SetLowPower(!profile.AnimationsEnabled);
     }
