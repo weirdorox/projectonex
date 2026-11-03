@@ -12,7 +12,7 @@ namespace Lumen.App.Controls;
 public sealed class OnScreenKeyboard : StackPanel
 {
     private static readonly string[] Rows = ["1234567890", "qwertyuiop", "asdfghjkl'", "zxcvbnm-:."];
-    private static readonly string[] SymbolRows = ["!@#$%^&*()", "~`_=+[]{}|", "\;\"<>?/,'é", "€£§°±µ¿¡«»"];
+    private static readonly string[] SymbolRows = ["!@#$%^&*()", "~`_=+[]{}|", @"\;""<>?/,'é", "€£§°±µ¿¡«»"];
     private readonly List<(Button Key, int Row, int Col)> _keys = [];
     private readonly Button _shiftKey;
     private readonly Button _symbolKey;
