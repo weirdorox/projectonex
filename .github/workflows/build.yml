@@ -59,6 +59,23 @@ jobs:
         shell: pwsh
         run: choco install innosetup --no-progress -y
 
+      - name: Fetch PresentMon (FPS telemetry, MIT licensed)
+        shell: pwsh
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Force third_party/presentmon | Out-Null
+          gh release download --repo GameTechDev/PresentMon --pattern 'PresentMon-*-x64.exe' --dir third_party/presentmon --clobber
+          gh api repos/GameTechDev/PresentMon/contents/LICENSE.txt -H "Accept: application/vnd.github.raw" > third_party/presentmon/LICENSE.txt
+          $exe = Get-ChildItem third_party/presentmon -Filter 'PresentMon-*-x64.exe' | Select-Object -First 1
+          if ($exe) {
+            "LUMEN_PRESENTMON=$($exe.FullName)" >> $env:GITHUB_ENV
+            Write-Host "PresentMon: $($exe.Name)"
+            $sig = Get-AuthenticodeSignature $exe.FullName
+            Write-Host "Signature: $($sig.Status) / $($sig.SignerCertificate.Subject)"
+          } else { Write-Warning "PresentMon release asset not found" }
+
       - name: Publish + installer
         shell: pwsh
         run: ./scripts/publish.ps1

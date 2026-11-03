@@ -50,6 +50,7 @@ public sealed partial class MainWindow : Window
         Tdp = new TdpService(DispatcherQueue, host.IsSafeMode);
         SmartPower = new SmartPowerService(host, Tdp);
         GameSessions = new GameSessionService(host, this, DispatcherQueue);
+        Overlay = new PerformanceOverlayService(host, this, DispatcherQueue);
 
         // ---- window chrome ----
         Title = "Lumen";
@@ -232,6 +233,10 @@ public sealed partial class MainWindow : Window
         if (_overlay.IsOpen) _overlay.HideOverlay();
         else _overlay.ShowOverlay();
     }
+
+    internal PerformanceOverlayService Overlay { get; }
+
+    internal bool IsShellForegroundForOverlay => IsShellForeground();
 
     private bool IsShellForeground() =>
         DesktopSwitcher.IsForeground(_hwnd) || (_overlay?.IsOpen == true && DesktopSwitcher.IsForeground(_overlay.Hwnd));
@@ -593,6 +598,7 @@ public sealed partial class MainWindow : Window
     {
         await Library.LoadAsync();
         if (GameSessions is not null) await GameSessions.StartAsync();
+        Overlay.Start();
         if (_host.IsSafeMode) return; // don't run scanners in safe mode
 
         SetStatus("Looking for games…");
@@ -640,6 +646,7 @@ public sealed partial class MainWindow : Window
         _hook.Dispose();
         _host.Power.Dispose();
         _overlay?.CloseForGood();
+        Overlay.Shutdown();
         if (_host.Hardware.IsValueCreated && _host.Hardware.Value.IsCompletedSuccessfully)
             _host.Hardware.Value.Result.Monitor?.Dispose();
         _host.Guard.MarkCleanExit();

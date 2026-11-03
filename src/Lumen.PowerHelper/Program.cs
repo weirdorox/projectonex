@@ -3,6 +3,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using Lumen.Core.Diagnostics;
 using Lumen.Core.Hardware;
+using Lumen.Core.Performance;
 using Lumen.Core.Power;
 using Lumen.Platform.Windows.Power;
 
@@ -20,6 +21,7 @@ internal static class Program
     private static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(2);
     private static readonly object Gate = new();
     private static DateTime _lastContact = DateTime.UtcNow;
+    private static readonly FpsCapture Fps = new();
 
     private static int Main(string[] args)
     {
@@ -49,6 +51,7 @@ internal static class Program
             while (!cts.IsCancellationRequested)
             {
                 await Task.Delay(1000).ConfigureAwait(false);
+                Fps.Tick();
                 lock (Gate)
                 {
                     driver?.Tick();
@@ -78,6 +81,7 @@ internal static class Program
         }
         finally
         {
+            Fps.Dispose();
             driver?.Dispose();
             Log.Info("PowerHelper exiting.");
         }
@@ -103,7 +107,7 @@ internal static class Program
                 await using var writer = new StreamWriter(pipe, leaveOpen: true) { AutoFlush = true };
                 var line = await reader.ReadLineAsync(ct).AsTask().WaitAsync(TimeSpan.FromSeconds(5), ct).ConfigureAwait(false);
                 var response = Handle(line, driver, unavailable);
-                await writer.WriteLineAsync(PowerHelperProtocol.Serialize(response)).ConfigureAwait(false);
+                await writer.WriteLineAsync(response).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is IOException or TimeoutException)
             {
@@ -112,14 +116,31 @@ internal static class Program
         }
     }
 
-    private static TdpStatus Handle(string? line, IntelTdpDriver? driver, string? unavailable)
+    private static string Handle(string? line, IntelTdpDriver? driver, string? unavailable)
+    {
+        var request = PowerHelperProtocol.ParseRequest(line);
+        if (request?.Command is PowerHelperRequest.Fps or PowerHelperRequest.FpsStop)
+        {
+            lock (Gate) _lastContact = DateTime.UtcNow;
+            if (PowerHelperProtocol.Validate(request, null) is { } bad) return PowerHelperProtocol.Serialize(FpsReading.Unavailable(bad));
+            if (!IsElevated()) return PowerHelperProtocol.Serialize(FpsReading.Unavailable("The Lumen helper is not elevated"));
+            if (request.Command == PowerHelperRequest.FpsStop)
+            {
+                Fps.Stop();
+                return PowerHelperProtocol.Serialize(FpsReading.Unavailable("Stopped"));
+            }
+            return PowerHelperProtocol.Serialize(Fps.Read(request.ProcessId!.Value));
+        }
+        return PowerHelperProtocol.Serialize(HandleTdp(request, driver, unavailable));
+    }
+
+    private static TdpStatus HandleTdp(PowerHelperRequest? request, IntelTdpDriver? driver, string? unavailable)
     {
         lock (Gate)
         {
             _lastContact = DateTime.UtcNow;
             if (driver is null) return TdpStatus.Unavailable(unavailable ?? "TDP control is not available.", "Intel RAPL (PawnIO)");
 
-            var request = PowerHelperProtocol.ParseRequest(line);
             var error = PowerHelperProtocol.Validate(request, driver.Range);
             if (error is not null) return driver.Status(error);
 

@@ -99,6 +99,20 @@ public sealed class ShellSettings
         set => SetBool("display.dockFollow", value);
     }
 
+    /// <summary>Performance overlay mode (Off/Minimal/Basic/Detailed/Advanced).</summary>
+    public Lumen.Core.Performance.OverlayMode OverlayMode
+    {
+        get => (Lumen.Core.Performance.OverlayMode)Math.Clamp(GetInt("overlay.mode", 0), 0, 4);
+        set => _store.Set("overlay.mode", ((int)value).ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>Overlay ignores touches/clicks (layered window). Off = compatibility mode if the overlay is invisible.</summary>
+    public bool OverlayClickThrough
+    {
+        get => GetBool("overlay.clickThrough", true);
+        set => SetBool("overlay.clickThrough", value);
+    }
+
     public bool FirstRunCompleted
     {
         get => GetBool("shell.firstRunCompleted", false);

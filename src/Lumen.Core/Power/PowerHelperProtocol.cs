@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lumen.Core.Hardware;
+using Lumen.Core.Performance;
 
 namespace Lumen.Core.Power;
 
@@ -9,8 +10,11 @@ namespace Lumen.Core.Power;
 /// restricted to the signed-in user. The helper only accepts these commands; every value is validated
 /// again on the elevated side.
 /// </summary>
-public sealed record PowerHelperRequest(string Command, double? Watts = null)
+public sealed record PowerHelperRequest(string Command, double? Watts = null, int? ProcessId = null)
 {
+    /// <summary>Start (if needed) and read PresentMon frame telemetry for <see cref="ProcessId"/>.</summary>
+    public const string Fps = "fps";
+    public const string FpsStop = "fps-stop";
     public const string Status = "status";
     public const string Set = "set";
     public const string Restore = "restore";
@@ -31,6 +35,14 @@ public static class PowerHelperProtocol
 
     public static string Serialize(PowerHelperRequest r) => JsonSerializer.Serialize(r, Options);
     public static string Serialize(TdpStatus s) => JsonSerializer.Serialize(s, Options);
+    public static string Serialize(FpsReading r) => JsonSerializer.Serialize(r, Options);
+
+    public static FpsReading? ParseFps(string? line)
+    {
+        if (string.IsNullOrWhiteSpace(line)) return null;
+        try { return JsonSerializer.Deserialize<FpsReading>(line, Options); }
+        catch (JsonException) { return null; }
+    }
 
     public static PowerHelperRequest? ParseRequest(string? line)
     {
@@ -55,7 +67,10 @@ public static class PowerHelperProtocol
             case PowerHelperRequest.Status:
             case PowerHelperRequest.Restore:
             case PowerHelperRequest.Ping:
+            case PowerHelperRequest.FpsStop:
                 return null;
+            case PowerHelperRequest.Fps:
+                return r.ProcessId is > 4 ? null : "Missing process id."; // never System/Idle
             case PowerHelperRequest.Set:
                 if (r.Watts is not { } w || double.IsNaN(w) || double.IsInfinity(w)) return "Missing wattage.";
                 if (range is null) return "TDP range is unknown.";

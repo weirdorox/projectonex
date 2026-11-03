@@ -2,6 +2,8 @@ using System.Diagnostics;
 using Lumen.App.Input;
 using Lumen.Core.Diagnostics;
 using Lumen.Core.Hardware;
+using Lumen.Core.Performance;
+using Lumen.Platform.Windows.Power;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -20,11 +22,41 @@ public sealed partial class QuickAccessWindow
 
     private void RenderDisplayAudio()
     {
+        RenderOverlayModes();
         RenderResolutions();
         RenderHdr();
         RenderAudio();
         DockText.Text = _main.Dock == DockState.Handheld ? string.Empty : $"Display: {_main.DockDescription}";
         DockText.Visibility = DockText.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    // ---------------- performance overlay ----------------
+
+    private void RenderOverlayModes()
+    {
+        OverlayPanel.Children.Clear();
+        var current = _main.Overlay.Mode;
+        foreach (var mode in Enum.GetValues<OverlayMode>())
+        {
+            var button = new Button
+            {
+                Content = mode.ToString(),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 0, 8, 8),
+            };
+            if (mode == current) Highlight(button);
+            var target = mode;
+            button.Click += (_, _) =>
+            {
+                _main.Overlay.SetMode(target);
+                RenderOverlayModes();
+                FocusNavigation.Focus(OverlayPanel.Children.OfType<Button>().FirstOrDefault(b => Equals(b.Content, target.ToString())) ?? (DependencyObject)OverlayPanel);
+            };
+            OverlayPanel.Children.Add(button);
+        }
+        OverlayNote.Text = !PowerHelperSetup.IsInstalledCached()
+            ? "FPS and frame times need the Lumen helper (Settings › Performance). Without it the overlay shows system, power and battery data only."
+            : "FPS is measured with Intel PresentMon (Windows event tracing - nothing is injected into games). Shown over borderless/windowed games, not exclusive fullscreen.";
     }
 
     // ---------------- resolution ----------------

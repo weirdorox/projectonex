@@ -20,7 +20,7 @@ public sealed class TdpService
     public TdpService(DispatcherQueue ui, bool safeMode)
     {
         _ui = ui;
-        _backend = !safeMode && PowerHelperSetup.IsHelperShipped ? new PowerHelperClient() : null;
+        _backend = !safeMode && PowerHelperSetup.IsHelperShipped ? PowerHelperClient.Shared : null;
         _keepAlive = ui.CreateTimer();
         _keepAlive.Interval = TimeSpan.FromSeconds(30);
         _keepAlive.IsRepeating = true;

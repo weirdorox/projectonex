@@ -9,3 +9,4 @@ artifacts/
 AppPackages/
 BundleArtifacts/
 TestResults/
+third_party/

@@ -41,6 +41,8 @@ public sealed class GameSessionService
         public int? StartPercent { get; } = battery.HasBattery ? battery.Percent : null;
         public bool EverOnAc { get; set; } = battery.Source != PowerSource.Battery;
         public double WattsSum { get; set; }
+        public double FpsSum { get; set; }
+        public int FpsSamples { get; set; }
         public int WattsSamples { get; set; }
     }
 
@@ -159,6 +161,12 @@ public sealed class GameSessionService
                 }
             }
 
+            if (_recorder is not null && _shell.Overlay.LatestFps?.Stats is { } fpsNow
+                && _shell.Overlay.LatestFps.ProcessId == _shell.RunningGame?.Process.ProcessId)
+            {
+                _recorder.FpsSum += fpsNow.Fps; // measured by PresentMon only
+                _recorder.FpsSamples++;
+            }
             if (_recorder is not null && ++_ticks % 15 == 0) await SampleAsync(_recorder);
 
             var active = _shell.RunningGame;
@@ -250,10 +258,10 @@ public sealed class GameSessionService
             var session = new PlaySession(
                 r.GameId, r.StartedAt, end,
                 OnBattery: !r.EverOnAc,
-                AvgFps: null, // FPS only when measured by the telemetry overlay
+                AvgFps: r.FpsSamples >= 10 ? Math.Round(r.FpsSum / r.FpsSamples, 1) : null, // measured only (overlay on)
                 AvgPackageWatts: r.WattsSamples > 0 ? Math.Round(r.WattsSum / r.WattsSamples, 1) : null,
                 BatteryPercentUsed: used,
-                FpsMeasured: false);
+                FpsMeasured: r.FpsSamples >= 10);
             await _host.History.AddAsync(session);
             if (session.Duration >= PlayStatsCalculator.MinimumSession)
                 await _host.Games.AddPlaytimeAsync(r.GameId, session.Duration);

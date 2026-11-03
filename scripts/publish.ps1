@@ -19,7 +19,9 @@ param(
     [ValidateSet('x64', 'ARM64')] [string] $Platform = 'x64',
     [string] $CertificateThumbprint,
     [string] $TimestampUrl = 'http://timestamp.digicert.com',
-    [switch] $NoInstaller
+    [switch] $NoInstaller,
+    # Intel PresentMon console exe (MIT) for real FPS telemetry; optional. CI sets LUMEN_PRESENTMON.
+    [string] $PresentMon = $env:LUMEN_PRESENTMON
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,6 +41,18 @@ try {
     Write-Host "== Publishing Lumen.PowerHelper ==" -ForegroundColor Cyan
     dotnet publish src/Lumen.PowerHelper/Lumen.PowerHelper.csproj -c Release -r $rid --self-contained true -o $out
     if ($LASTEXITCODE -ne 0) { throw "PowerHelper publish failed" }
+
+    if ($PresentMon -and (Test-Path $PresentMon)) {
+        $tools = Join-Path $out 'tools'
+        New-Item -ItemType Directory -Force $tools | Out-Null
+        Copy-Item $PresentMon (Join-Path $tools 'PresentMon.exe') -Force
+        $license = Join-Path (Split-Path -Parent $PresentMon) 'LICENSE.txt'
+        if (Test-Path $license) { Copy-Item $license (Join-Path $tools 'PresentMon-LICENSE.txt') -Force }
+        Write-Host "Included PresentMon from $PresentMon" -ForegroundColor Cyan
+    }
+    else {
+        Write-Warning "PresentMon not provided - FPS telemetry will report 'not included in this build'."
+    }
 
     Write-Host "== Publishing Lumen.Recovery ==" -ForegroundColor Cyan
     dotnet publish src/Lumen.Recovery/Lumen.Recovery.csproj -c Release -r $rid --self-contained true -o $out

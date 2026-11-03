@@ -96,6 +96,13 @@
                     <VariableSizedWrapGrid x:Name="RefreshPanel" Orientation="Horizontal" ItemWidth="112" ItemHeight="56" />
                 </StackPanel>
 
+                <!-- Performance overlay -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Performance overlay" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <VariableSizedWrapGrid x:Name="OverlayPanel" Orientation="Horizontal" ItemWidth="136" ItemHeight="56" />
+                    <TextBlock x:Name="OverlayNote" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" />
+                </StackPanel>
+
                 <!-- Resolution (driver-tested; asks to keep, reverts automatically) -->
                 <StackPanel x:Name="ResolutionSection" Spacing="8" Visibility="Collapsed">
                     <TextBlock Text="Resolution" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />

@@ -31,12 +31,26 @@ public static class PowerHelperSetup
 
     public static bool IsInstalled() => RunSchtasks($"/Query /TN \"{TaskName}\"", elevated: false) == 0;
 
+    private static (bool Value, DateTime At)? _installedCache;
+
+    /// <summary><see cref="IsInstalled"/> cached for 30 s (it starts schtasks.exe) - for frequently polled UI/telemetry.</summary>
+    public static bool IsInstalledCached()
+    {
+        if (_installedCache is { } c && DateTime.UtcNow - c.At < TimeSpan.FromSeconds(30)) return c.Value;
+        var v = IsInstalled();
+        _installedCache = (v, DateTime.UtcNow);
+        return v;
+    }
+
+    public static void InvalidateCache() => _installedCache = null;
+
     /// <summary>Starts the helper through the task (no UAC). Returns false if the task does not exist.</summary>
     public static bool Start() => RunSchtasks($"/Run /TN \"{TaskName}\"", elevated: false) == 0;
 
     /// <summary>Registers the task. Shows one UAC prompt. Returns null on success or an error message.</summary>
     public static string? Install(string dataDirectory)
     {
+        InvalidateCache();
         if (!IsHelperShipped) return "Lumen.PowerHelper.exe is missing from the installation.";
         var sid = CurrentUserSid;
         var xml = BuildTaskXml(HelperPath, sid, dataDirectory);
@@ -61,6 +75,7 @@ public static class PowerHelperSetup
     /// <summary>Removes the task. Shows one UAC prompt.</summary>
     public static string? Uninstall()
     {
+        InvalidateCache();
         var rc = RunSchtasks($"/Delete /TN \"{TaskName}\" /F", elevated: true);
         return rc is 0 ? null : rc == 1223 ? "Cancelled at the administrator prompt." : $"Task Scheduler error {rc}.";
     }
