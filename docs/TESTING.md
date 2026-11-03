@@ -19,9 +19,23 @@ dotnet test tests/Lumen.Data.Tests
 | Device profiles | OneXPlayer 3 / family / generic resolution, no profile permits TDP/fan, composer vetoes |
 | Power policy | plugged/battery/low/saver |
 | Crash guard | clean exits, 3-crash safe mode, window expiry, stability reset, recovery flag, corrupt state |
-| SQLite | idempotent migrations, round-trip, upsert, launch/playtime/favorite/hidden, settings persistence, LibraryService on SQLite |
+| SQLite | idempotent migrations (now v3), round-trip, upsert, launch/playtime/favorite/hidden, settings persistence, LibraryService on SQLite, collections + membership cascade, play sessions |
+| Search | prefix / word / acronym / accent-insensitive / subsequence ranking, hidden + uninstalled rules |
+| Collections & stats | name cleaning, membership, play-stats aggregation (blips ignored, time-weighted measured FPS, battery %/h, 14-day series) |
+| Ubisoft / EA / Battle.net | registry-based discovery with fake registry + temp folders, launcher exclusion |
+| Display | resolution choice (aspect, cap, native/current kept), dock detection and target display |
+| Theme | every accent readable on both backgrounds (WCAG contrast), OLED black |
+| FPS telemetry | PresentMon CSV (current, legacy v2, noise), rolling window, 1 % low, displayed FPS, overlay content per mode, "never a number when not measured" |
+| Advisor | refresh, headroom, stutter, GPU/CPU-bound, heat, firmware override, low battery, no data |
+| Mouse mode | deadzone/curve, fractional accumulation, precision, button edges, modifier suppression, whole-notch scrolling |
+| Shortcuts | View+Y / View+X chords suppress View and the face-button action |
 
-Windows-only code (XInput, Core Audio, WMI, WinUI) is covered by the manual checklist below.
+Windows-only code (XInput, Core Audio, WMI, CCD/HDR, PresentMon, SendInput, WinUI) is covered by the
+manual checklists below.
+
+> **A green CI run proves that Lumen compiles, packages and passes its unit tests. It does not prove
+> that anything works on the OneXPlayer 3.** Hardware-facing features stay "not device-tested" in
+> [FEATURE-STATUS.md](FEATURE-STATUS.md) until the procedures below have been run on the device.
 
 ## Manual checklist on the OneXPlayer 3
 
@@ -83,3 +97,101 @@ Run each item; note pass/fail and attach `%LOCALAPPDATA%\Lumen\logs` for failure
 **Touch & scaling**
 - [ ] Tap tiles to launch, swipe shelves/grid, tap toggles/sliders – all hit targets ≥ 48 epx
 - [ ] Check at 125 %, 150 %, 175 % scaling: no clipped text, top bar fits
+
+---
+
+## OneXPlayer 3 device test procedures (v0.3)
+
+Before starting: Settings › Diagnostics › **Run diagnostics** and save the text; after a session,
+**Export logs (zip)** and keep the file with your results. Record every result in a copy of
+[FEATURE-STATUS.md](FEATURE-STATUS.md) ("Device-tested" column).
+
+### A. TDP – requested vs. read back vs. measured vs. firmware
+
+Setup: install PawnIO, put `IntelMSR.bin` in `%LOCALAPPDATA%\Lumen\pawnio\`, Settings › Performance ›
+enable the helper (one UAC prompt). Use a steady load (a game's benchmark or a fixed scene) on AC.
+
+1. Power tab shows CPU name, range and its source, lock state. **Fill in:** min / max W, "range source".
+   If it says *locked*, stop here: TDP is firmware-locked on this unit – record it, nothing else applies.
+2. For each preset (Eco 10, Balanced 20, Performance 28, Turbo 35) and the firmware default, record:
+
+   | Requested | PL1 read back | PL2 read back | Measured package W (after 30 s load) | Firmware override shown? | Diagnostics "Note" |
+   |---|---|---|---|---|---|
+   | default | | | | | |
+   | 10 W | | | | | |
+   | 20 W | | | | | |
+   | 28 W | | | | | |
+   | 35 W (only if inside the range) | | | | | |
+
+   Pass: read-back equals the request, measured package power settles at or below it (it may stay
+   lower if the game does not need more), presets outside the range are disabled with a reason.
+3. **Never forced repeatedly:** with a request active, open OneXConsole (or the OEM tool) and change
+   its mode. Within ~1 min Lumen must show "Firmware override" and the helper log must show at most
+   **3** `PL1 drifted … re-applied` lines followed by `Firmware keeps resetting PL1 … no longer
+   re-applying` – no further writes after that.
+4. Close Lumen normally → read back returns to the firmware default (check with Diagnostics after
+   restart). Kill the helper in Task Manager → Lumen reports the helper unavailable, then restarts it.
+5. Leave Lumen idle > 2 min with a request active and the shell closed → helper restores firmware limits.
+6. Battery: unplug, verify the same request is kept (or Smart Power auto switches as configured).
+7. Thermal protections: under Turbo, temperature must never exceed the CPU's own limit (Diagnostics
+   "Package temperature"); Lumen never touches thermal registers.
+
+### B. FPS telemetry and overlay
+
+1. Without the helper: overlay modes work, FPS shows "—" with "FPS needs the Lumen helper". No number.
+2. With the helper, borderless game: Minimal shows FPS within ~2 s; compare with the game's own FPS
+   counter or Intel's overlay (± 5 %). Note game, API (DX11/12/Vulkan) and present mode (Advanced).
+3. Advanced: frame-time graph moves, 1 % low drops when you force a stutter (alt-tab, loading).
+4. Pause/minimize the game → "No new frames"; resume → numbers return. Close the game → "No game running".
+5. Exclusive-fullscreen game: record whether the overlay is visible (expected: not visible – Windows
+   limitation). Record whether FPS is still measured in the play history afterwards.
+6. Anti-cheat title (e.g. one using EAC/BattlEye): play 10 min with the overlay on – no warnings or
+   kicks expected (PresentMon only reads ETW events, nothing is injected). Record title and result.
+7. Overlay off → Task Manager shows no `PresentMon.exe` within ~6 s.
+8. Click-through: tap on the overlay area in a game – the game receives the tap. If the overlay is
+   invisible, set `overlay.clickThrough` off (compatibility) and report it.
+9. Play ≥ 10 min with the overlay on, close the game → game details show "Avg FPS" for that session.
+
+### C. Sleep / resume
+
+Repeat 5× each: power button sleep, QAM › Sleep, lid/screen-off timeout; on AC and on battery.
+
+- [ ] Controller works within ~1 s of the screen turning on (log: `Resume: input ready … first frame …`)
+- [ ] Detachable controllers re-attached while asleep are found (toast "Controller connected")
+- [ ] Settings restored: running game's profile (refresh, plan, brightness, TDP read back) still applied
+- [ ] Focus: same tab and focused tile as before sleep; no fullscreen flicker; QAM closed
+- [ ] **No duplicate instances**: Task Manager shows one `Lumen.exe` (plus at most one `Lumen.PowerHelper.exe`); starting Lumen again from the Start menu brings the existing window forward
+- [ ] Docked during sleep → undocked on wake (and vice versa): Lumen ends up on the right display
+- [ ] Overlay comes back over the game after wake (if it was on)
+
+### D. Display, HDR, docked mode
+
+- [ ] Resolution: pick a lower one → "Keep? Going back in 15 s"; let it time out → original restored; pick again + Keep → persists after reboot
+- [ ] Refresh-rate list matches the panel (and the new resolution)
+- [ ] HDR toggle appears only when supported; switching matches Windows Settings › Display › HDR; on battery note whether Windows blocks it
+- [ ] Connect a USB-C dock/monitor/TV: toast "Docked · <name>", Lumen moves to the external display (setting on); disconnect → back to the built-in panel; with the setting off nothing moves
+- [ ] Projection "Second screen only" (Win+P): state "External display only"
+
+### E. Audio
+
+- [ ] Mic mute toggle mutes the default microphone (check in Windows Sound settings and a voice app)
+- [ ] Audio output list shows speakers + headphones/Bluetooth/HDMI; switching changes the Windows default; if it fails, Sound settings open
+- [ ] Volume slider follows the new device
+
+### F. Library extras
+
+- [ ] Search tab: OSK typing with A, X backspace, Y space, RT to results, A launches, X opens details
+- [ ] Ubisoft Connect, EA app and Battle.net games are found (record titles) and launch
+- [ ] Hide a game (details) → gone from Home/Library/Search; Library › Hidden → Unhide
+- [ ] Create a collection (OSK), add games from details, pin it to Home (Settings › Personalization), delete it (two presses)
+- [ ] Play 2+ sessions → details show total, sessions, 14-day bars, battery drain on battery, CPU W when helper on
+
+### G. Input, capture, personalization
+
+- [ ] View+Y in a game → screenshot appears in Videos › Captures (Game Bar enabled); with Game Bar captures off → explanation toast
+- [ ] QAM › Record starts/stops a Game Bar recording
+- [ ] QAM › Keyboard opens the touch keyboard over a game/launcher (or osk.exe as fallback)
+- [ ] Mouse mode: on → desktop cursor moves smoothly, A/B click, right stick scrolls, RT precision; inside Lumen the controller navigates; starting a game turns it off
+- [ ] Accent colours / OLED black apply instantly across Lumen and the QAM; interface sounds on/off
+- [ ] Home rows can be hidden; a pinned collection row appears
+- [ ] Advisor (Power tab) shows tips matching what you see (e.g. 60 Hz tip at low FPS on battery)

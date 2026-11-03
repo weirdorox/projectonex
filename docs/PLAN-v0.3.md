@@ -21,7 +21,7 @@ Inno Setup installer, GitHub Actions CI (Linux tests + Windows build/publish/ins
 | Startup at sign-in (Run key / MSIX task), auto sign-in via Microsoft tools, recovery tool | ✅ done | |
 | **TDP** | ❌ missing | contract `ITdpControl` exists, no backend |
 | Battery wattage / runtime / health | ❌ missing | only % and AC state |
-| FPS telemetry / limiting, performance overlay | ❌ missing | |
+| FPS telemetry / limiting, performance overlay | ❌ missing (at audit time) | telemetry + overlay done since; limiter deliberately not provided |
 | Power menu (sleep, hibernate, restart, shutdown, restart Lumen, Task Manager) | ❌ missing | |
 | Search, collections, hide/unhide, launch args, EA/Ubisoft/Battle.net | ❌ missing | |
 | Sounds, themes, docked mode, remote play, statistics | ❌ missing | |
@@ -65,7 +65,11 @@ Inno Setup installer, GitHub Actions CI (Linux tests + Windows build/publish/ins
 | 3 – Quick Access tabs, power actions, battery tab | ✅ implemented (resolution/HDR/mic mute, FPS telemetry/OSD still open) |
 | 4 – TDP in per-game profiles | ✅; search, collections, hide, launch args, EA/Ubisoft/Battle.net still open |
 | 5 – instant resume, unlock handling, session restore | ✅; docked mode, UI sounds, desktop mouse mode still open |
-| 6 – premium | not started |
+| 6 – premium | ✅ advisor, statistics, themes, sounds, Home customisation |
+| v0.3 continuation – Phase 1 (FPS/overlay, resolution, HDR, mic/output, search, collections, hide, EA/Ubisoft/Battle.net, sounds/themes/dashboard, docked mode, stats) | ✅ implemented, CI green – **needs on-device verification** |
+| v0.3 continuation – Phase 2 (keyboards, mouse mode, shortcuts, screenshots/recording, battery/AC profiles, advisor, diagnostics, log export, unsupported indicators) | ✅ implemented, CI green – **needs on-device verification** |
+
+Current per-feature status: [FEATURE-STATUS.md](FEATURE-STATUS.md).
 
 ## 4. Implementation order (each phase: build + tests in CI before the next)
 

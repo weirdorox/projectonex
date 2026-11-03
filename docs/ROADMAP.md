@@ -1,6 +1,6 @@
 # Roadmap
 
-Status legend: ✅ in this drop · 🟡 partially · ⏭ planned
+Status legend: ✅ implemented (see [FEATURE-STATUS.md](FEATURE-STATUS.md) for device verification) · 🟡 partially · ⏭ planned
 
 ## Phase 0 – Foundation ✅
 - ✅ Solution architecture, layered projects, central package management
@@ -24,22 +24,22 @@ Status legend: ✅ in this drop · 🟡 partially · ⏭ planned
 the manual checklist in [TESTING.md](TESTING.md) passes on the OneXPlayer 3.
 
 ## Phase 2 – Polish
-- ⏭ On-screen keyboard integration for text entry (TabTip / `InputPane`)
-- ⏭ Game details page (X): play time, hide game, custom cover picker, launch options
+- ✅ On-screen keyboard (Lumen's own for search/collections; Windows touch keyboard from Quick Access)
+- 🟡 Game details page (X): play history & stats, hide, collections, profile ✅ · custom cover picker, launch options ⏭
 - ⏭ Manual "Add game" (exe / URI) with controller-friendly file browser
 - ⏭ Artwork: Epic/GOG cover retrieval (local Galaxy DB / public store metadata), optional SteamGridDB (user API key), local icon extraction
-- ⏭ Search (on-screen keyboard), sort options
+- ✅ Search (on-screen keyboard) · ⏭ sort options
 - ⏭ Localisation (resw), accessibility pass (Narrator, text scaling)
 - ⏭ Configurable global hotkey and chords
-- 🟡 Play time for store games (process detection by install folder)
+- ✅ Play time for all stores (foreground process detection) + per-session history
 
 ## Phase 3 – Hardware (only verified, documented paths)
 - ⏭ Windows.Gaming.Input backend (in addition to XInput) – Guide button where exposed
 - ⏭ Windows 11 power mode (Best efficiency / Balanced / Best performance) if a supported public API becomes available
-- ⏭ Per-game refresh rate profiles
-- ⏭ OneXPlayer vendor features (TDP, fan, RGB) **only** if OneXPlayer publishes an interface or a
-  well-documented, signed, non-vulnerable driver path exists. Until then: link to OneXConsole.
-- ⏭ Battery health (Windows.Devices.Power aggregate battery report)
+- ✅ Per-game profiles (refresh, plan, brightness, TDP)
+- 🟡 TDP through the signed PawnIO driver (Intel RAPL, opt-in elevated helper) ✅ · fan/RGB stay
+  unsupported until OneXPlayer documents an interface.
+- ✅ Battery health and discharge watts (aggregate battery report)
 
 ## Phase 4 – Deeper console mode (opt-in, reversible)
 - ⏭ Hide the desktop flash at sign-in (black splash window as early as possible; scheduled task "at logon" instead of the Run key for faster start)

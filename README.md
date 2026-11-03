@@ -35,6 +35,12 @@ winget install Microsoft.DotNet.SDK.10
 | [docs/TESTING.md](docs/TESTING.md) | automated tests + on-device checklist |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | what's done, what's next |
 
+## What is implemented and what is verified
+
+See [docs/FEATURE-STATUS.md](docs/FEATURE-STATUS.md). CI builds every commit, but **no feature counts
+as working on the OneXPlayer 3 until it has passed the device procedures in
+[docs/TESTING.md](docs/TESTING.md).**
+
 ## Controller cheat sheet
 
 | | |
@@ -48,4 +54,6 @@ winget install Microsoft.DotNet.SDK.10
 | ≡ | quick access |
 | ⧉ + ≡ | quick access from anywhere (also in games) |
 | ⧉ + ≡ + LB + RB (hold 3 s) | emergency: show the Windows desktop |
+| ⧉ + Y | screenshot (Xbox Game Bar) – also in games |
+| ⧉ + X | cycle the performance overlay – also in games |
 | Ctrl + Alt + Home | bring Lumen back |

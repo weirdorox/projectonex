@@ -24,6 +24,12 @@
 | GPU % | `WindowsSystemMonitor` | "GPU Engine" perf counters (3D) | same source as Task Manager; Intel Arc supported via WDDM |
 | RAM | `WindowsSystemMonitor` | `GlobalMemoryStatusEx` | |
 | Temperature | `WindowsSystemMonitor` | "Thermal Zone Information" perf counters | **ACPI zone, approximate** – labelled as such, not CPU die temp |
+| Resolution | `DisplayModeControl` (`IResolutionControl`) | `ChangeDisplaySettingsEx` (`CDS_TEST` first, not persisted until "Keep") | reverts after 15 s without confirmation |
+| HDR, displays, dock | `DisplayTopology` | CCD: `QueryDisplayConfig`, `DisplayConfigGet/SetDeviceInfo` | internal = embedded DP/LVDS/internal output technology |
+| Mic mute, outputs | `CoreAudioDevices` | Core Audio capture endpoints; output switch via `IPolicyConfig` (undocumented, as used by Windows' Sound settings) | falls back to `ms-settings:sound` |
+| FPS / frame times | `Lumen.PowerHelper` + PresentMon | ETW present events (PresentMon 2.6, Intel-signed) | elevated helper only; nothing injected |
+| Screenshots / clips | `GameBarCapture` | Xbox Game Bar default shortcuts via `SendInput` | requires Game Bar captures enabled |
+| Mouse mode | `MouseInjector` | `SendInput` | UIPI blocks admin windows (by design) |
 
 ## Real TDP control (Intel, optional)
 
@@ -85,3 +91,11 @@ documented IOCTL):
 3. Pass the provider in `WindowsHardwareFactory` (`ProviderCandidates.Tdp`).
 4. Add a unit test that the generic profile still refuses it.
 5. Surface it in the quick-access panel behind an explicit "enable experimental control" toggle.
+
+## Security note on the elevated helper
+
+The helper (and the PresentMon it starts) runs with administrator rights through a scheduled task the
+user enables explicitly. With the default **per-user** install, the program folder is writable by the
+user's own processes. For a device that other people use, install Lumen **for all users** (Program
+Files) before enabling the helper. PresentMon is only started if its Authenticode signature is valid
+and issued to Intel Corporation.
