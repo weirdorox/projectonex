@@ -195,3 +195,14 @@ Repeat 5× each: power button sleep, QAM › Sleep, lid/screen-off timeout; on A
 - [ ] Accent colours / OLED black apply instantly across Lumen and the QAM; interface sounds on/off
 - [ ] Home rows can be hidden; a pinned collection row appears
 - [ ] Advisor (Power tab) shows tips matching what you see (e.g. 60 Hz tip at low FPS on battery)
+
+### H. Steam account, artwork, brightness, HDR, Wi-Fi
+
+- [ ] Settings › Steam account › Sign in through Steam: Steam's page opens over Lumen; after login it closes and shows "Signed in"
+- [ ] Get API key: register with domain "localhost" → "Use this key" appears → library loads (owned count shown)
+- [ ] Library › Not installed lists owned games; A opens Steam's install dialog; after installing it moves to the normal library
+- [ ] Private "Game details" → clear message; Sign out → Not installed list empties
+- [ ] New Steam games (e.g. Phantom Blade Zero) show cover and hero art after a scan
+- [ ] Brightness slider changes an external monitor (DDC/CI on) and the built-in panel; unsupported → disabled with explanation
+- [ ] HDR toggle visible; switching matches Windows Settings; on a non-HDR display it is disabled with the reason
+- [ ] QAM › System › Wi-Fi networks lists networks; connect to a saved one; enter a password with the on-screen keyboard (symbols via #+=); wrong password says so; tapping the connected network disconnects

@@ -9,6 +9,8 @@ the device yet – every hardware feature is **not device-tested** until you fil
 |---|---|---|---|---|
 | Fullscreen controller shell, Home/Library/Settings, safe mode, recovery tool | ✅ | ✅ | ☐ | v0.1 |
 | Steam / Epic / GOG / Xbox / folders | ✅ | ✅ | ☐ | |
+| **Steam sign-in + owned library** (uninstalled games, Install via Steam) | ✅ | ✅ (OpenID/API parsing) / 🟡 (WebView) | ☐ | Steam's own login page; needs your free Web API key + public "Game details" |
+| **Steam store artwork** for new games (hashed asset paths) | ✅ | ✅ | ☐ | public store service, no account needed |
 | **Ubisoft Connect / EA app / Battle.net** discovery | ✅ | ✅ | ☐ | registry based; launch via `uplay://` or the game exe |
 | **Universal search** (OSK, every store) | ✅ | ✅ | ☐ | |
 | **Collections**, favorites | ✅ | ✅ | ☐ | |
@@ -20,7 +22,9 @@ the device yet – every hardware feature is **not device-tested** until you fil
 | **FPS / frame-time telemetry** (PresentMon/ETW in helper) | ✅ | ✅ | ☐ | PresentMon 2.6.0 bundled, Intel signature checked before running |
 | **Performance overlay** Off/Minimal/Basic/Detailed/Advanced + graph | ✅ | ✅ | ☐ | not visible over exclusive fullscreen (Windows) |
 | **Resolution** with keep/revert | ✅ | ✅ (option logic) / 🟡 (switching) | ☐ | |
-| **HDR** switch | ✅ | 🟡 | ☐ | CCD API, 24H2 + legacy requests |
+| **HDR** switch | ✅ | 🟡 | ☐ | CCD API, 24H2 + legacy requests; always shown, disabled with the reason when unsupported |
+| **Brightness on external monitors** (DDC/CI) | ✅ | 🟡 | ☐ | plus built-in panel via WMI; monitor must have DDC/CI on |
+| **Wi-Fi networks** (scan, connect with password, disconnect) | ✅ | 🟡 | ☐ | Windows needs location access for desktop apps to list networks |
 | **Docked mode** (external display detection, move Lumen) | ✅ | ✅ (detection) / 🟡 (moving) | ☐ | Win+P mode is never changed |
 | **Mic mute** | ✅ | 🟡 | ☐ | default console + communications mics |
 | **Audio output selection** | ✅ | 🟡 | ☐ | undocumented Windows interface; falls back to Sound settings |
