@@ -4,6 +4,7 @@ using Lumen.Core.Diagnostics;
 using Lumen.Core.Hardware;
 using Lumen.Core.Performance;
 using Lumen.Platform.Windows.Power;
+using Lumen.Platform.Windows.Shell;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -235,6 +236,48 @@ public sealed partial class QuickAccessWindow
             _updating = true;
             MicToggle.IsOn = audio.GetMicMuted() == true;
             _updating = false;
+        }
+    }
+
+    // ---------------- capture & keyboard ----------------
+
+    private async void OnScreenshotClick(object sender, RoutedEventArgs e) => await CaptureAsync(record: false);
+
+    private async void OnRecordClick(object sender, RoutedEventArgs e) => await CaptureAsync(record: true);
+
+    /// <summary>Close the panel first so the game (not Lumen) is in front when Game Bar captures.</summary>
+    private async Task CaptureAsync(bool record)
+    {
+        if (!GameBarCapture.IsEnabled())
+        {
+            _main.ShowToast("Game Bar captures are turned off in Windows Settings › Gaming › Captures.");
+            return;
+        }
+        HideOverlay();
+        await Task.Delay(400);
+        if (record) GameBarCapture.ToggleRecording();
+        else GameBarCapture.Screenshot();
+    }
+
+    private async void OnKeyboardClick(object sender, RoutedEventArgs e)
+    {
+        HideOverlay();
+        await Task.Delay(250);
+        if (!await Task.Run(TouchKeyboard.Toggle)) _main.ShowToast("Windows did not open a keyboard.");
+    }
+
+    private void OnCapturesClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var folder = GameBarCapture.CapturesFolder;
+            Directory.CreateDirectory(folder);
+            using var _ = Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
+            HideOverlay();
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Opening captures folder failed.", ex);
         }
     }
 }

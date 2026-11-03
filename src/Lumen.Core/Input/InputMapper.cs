@@ -18,6 +18,8 @@ public enum NavAction
     ScrollDown,
     QuickAccess,    // View + Menu together
     EmergencyDesktop, // View + Menu + LB + RB held
+    Screenshot,     // View + Y (works in games)
+    CycleOverlay,   // View + X (works in games)
 }
 
 public sealed record InputMapperOptions
@@ -125,6 +127,13 @@ public sealed class InputMapper
         {
             _emergencyStart = null;
             _emergencyFired = false;
+        }
+
+        // ---- shortcuts: View + face button (delivered even while a game is in front) ----
+        if (viewHeld && !menuHeld)
+        {
+            if (Pressed(GamepadButtons.Y)) { actions.Add(NavAction.Screenshot); _chordUsed = true; }
+            if (Pressed(GamepadButtons.X)) { actions.Add(NavAction.CycleOverlay); _chordUsed = true; }
         }
 
         if (Released(GamepadButtons.View) && !_chordUsed) actions.Add(NavAction.View);

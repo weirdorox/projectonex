@@ -74,6 +74,19 @@
                     </ScrollViewer>
                 </StackPanel>
 
+                <StackPanel x:Name="PinnedSection" Visibility="Collapsed">
+                    <TextBlock x:Name="PinnedHeader" Style="{StaticResource LumenSectionHeader}" />
+                    <ScrollViewer HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" Padding="0,10,48,14">
+                        <ItemsRepeater x:Name="PinnedRepeater" ItemTemplate="{StaticResource TileTemplate}"
+                                       ElementPrepared="OnElementPrepared" ElementClearing="OnElementClearing">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Orientation="Horizontal" Spacing="18" />
+                            </ItemsRepeater.Layout>
+                        </ItemsRepeater>
+                    </ScrollViewer>
+                </StackPanel>
+
                 <StackPanel x:Name="NewSection" Visibility="Collapsed">
                     <TextBlock Text="Recently added" Style="{StaticResource LumenSectionHeader}" />
                     <ScrollViewer HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"

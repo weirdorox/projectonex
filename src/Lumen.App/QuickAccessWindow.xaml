@@ -258,6 +258,16 @@
                     </VariableSizedWrapGrid>
                     <TextBlock x:Name="PowerConfirmText" Style="{StaticResource LumenCaptionText}" />
 
+                    <TextBlock Text="Capture &amp; keyboard" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="128" ItemHeight="56">
+                        <Button Content="Screenshot" Click="OnScreenshotClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Record" Click="OnRecordClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Keyboard" Click="OnKeyboardClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                        <Button Content="Captures" Click="OnCapturesClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />
+                    </VariableSizedWrapGrid>
+                    <TextBlock x:Name="CaptureNote" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap"
+                               Text="Uses Xbox Game Bar (saved to Videos › Captures). Shortcut: View + Y = screenshot, View + X = performance overlay." />
+
                     <TextBlock Text="Connections" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
                     <ToggleSwitch x:Name="WifiToggle" Header="Wi-Fi" Toggled="OnWifiToggled" Visibility="Collapsed" />
                     <ToggleSwitch x:Name="BluetoothToggle" Header="Bluetooth" Toggled="OnBluetoothToggled" Visibility="Collapsed" />

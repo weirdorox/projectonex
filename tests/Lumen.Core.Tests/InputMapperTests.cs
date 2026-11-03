@@ -88,6 +88,18 @@ public class InputMapperTests
     }
 
     [Fact]
+    public void View_plus_face_buttons_are_global_shortcuts_and_suppress_view()
+    {
+        var m = Primed();
+        Assert.Empty(m.Update(Pad(GamepadButtons.View), Ms(10)));
+        Is(m.Update(Pad(GamepadButtons.View | GamepadButtons.Y), Ms(20)), NavAction.Screenshot);
+        Assert.Empty(m.Update(Pad(GamepadButtons.View), Ms(30)));
+        Is(m.Update(Pad(GamepadButtons.View | GamepadButtons.X), Ms(40)), NavAction.CycleOverlay);
+        Assert.Empty(m.Update(Pad(), Ms(50))); // no View on release, no Tertiary/Secondary
+        Is(m.Update(Pad(GamepadButtons.Y), Ms(60)), NavAction.Tertiary);
+    }
+
+    [Fact]
     public void View_plus_menu_opens_quick_access_once_and_suppresses_singles()
     {
         var m = Primed();

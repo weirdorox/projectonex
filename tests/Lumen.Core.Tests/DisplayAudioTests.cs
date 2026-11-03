@@ -67,3 +67,29 @@ public class DockDetectorTests
         Assert.StartsWith("Docked", DockDetector.Describe(DockState.Docked, [D("panel", true, true), b]));
     }
 }
+
+public class ThemeTests
+{
+    [Fact]
+    public void Every_accent_is_readable()
+    {
+        foreach (var accent in Lumen.Core.Personalization.Themes.Accents)
+        {
+            foreach (var oled in new[] { false, true })
+            {
+                var p = Lumen.Core.Personalization.Themes.Resolve(accent.Id, oled);
+                Assert.True(Lumen.Core.Personalization.Themes.ContrastRatio(p.Accent, p.Background) >= 3, $"{accent.Id} on background");
+                Assert.True(Lumen.Core.Personalization.Themes.ContrastRatio(p.TextOnAccent, p.Accent) >= 4.5, $"text on {accent.Id}");
+            }
+        }
+    }
+
+    [Fact]
+    public void Oled_is_true_black_and_unknown_accent_falls_back()
+    {
+        var p = Lumen.Core.Personalization.Themes.Resolve("nope", oled: true);
+        Assert.Equal(new Lumen.Core.Artwork.RgbColor(0, 0, 0), p.Background);
+        Assert.Equal("ember", Lumen.Core.Personalization.Themes.Accent("nope").Id);
+        Assert.Equal(21, Lumen.Core.Personalization.Themes.ContrastRatio(new(0, 0, 0), new(255, 255, 255)), 1);
+    }
+}

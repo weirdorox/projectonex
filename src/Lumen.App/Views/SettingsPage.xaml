@@ -21,6 +21,23 @@
                 </StackPanel>
             </Border>
 
+            <!-- ================= Personalization ================= -->
+            <TextBlock Text="Personalization" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Accent colour" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <StackPanel x:Name="AccentPanel" Orientation="Horizontal" Spacing="8" />
+                    <ToggleSwitch x:Name="OledToggle" Header="OLED black (true black backgrounds)" Toggled="OnOledToggled" />
+                    <ToggleSwitch x:Name="SoundsToggle" Header="Interface sounds" Toggled="OnSoundsToggled" />
+                    <TextBlock Text="Home screen rows" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <ToggleSwitch x:Name="HomeRecentToggle" Header="Jump back in" Toggled="OnHomeRowToggled" />
+                    <ToggleSwitch x:Name="HomeFavoritesToggle" Header="Favorites" Toggled="OnHomeRowToggled" />
+                    <ToggleSwitch x:Name="HomeNewToggle" Header="Recently added" Toggled="OnHomeRowToggled" />
+                    <TextBlock Text="Collection on Home" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <StackPanel x:Name="PinnedPanel" Orientation="Horizontal" Spacing="8" />
+                </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource LumenCardStyle}">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Automatic sign-in (optional)" Style="{StaticResource LumenSectionHeader}" Margin="0" />

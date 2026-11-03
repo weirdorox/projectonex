@@ -113,6 +113,52 @@ public sealed class ShellSettings
         set => SetBool("overlay.clickThrough", value);
     }
 
+    // ---- personalization ----
+
+    public string AccentId
+    {
+        get => _store.Get("theme.accent") ?? "ember";
+        set => _store.Set("theme.accent", value);
+    }
+
+    /// <summary>True black surfaces (saves power on OLED panels).</summary>
+    public bool OledTheme
+    {
+        get => GetBool("theme.oled", false);
+        set => SetBool("theme.oled", value);
+    }
+
+    public bool UiSounds
+    {
+        get => GetBool("ui.sounds", false);
+        set => SetBool("ui.sounds", value);
+    }
+
+    public bool HomeShowRecent
+    {
+        get => GetBool("home.recent", true);
+        set => SetBool("home.recent", value);
+    }
+
+    public bool HomeShowFavorites
+    {
+        get => GetBool("home.favorites", true);
+        set => SetBool("home.favorites", value);
+    }
+
+    public bool HomeShowNew
+    {
+        get => GetBool("home.new", true);
+        set => SetBool("home.new", value);
+    }
+
+    /// <summary>A collection shown as its own row on Home (null = none).</summary>
+    public string? HomePinnedCollection
+    {
+        get => _store.Get("home.pinnedCollection") is { Length: > 0 } v ? v : null;
+        set => _store.Set("home.pinnedCollection", value ?? "");
+    }
+
     public bool FirstRunCompleted
     {
         get => GetBool("shell.firstRunCompleted", false);

@@ -47,6 +47,7 @@ public sealed partial class SettingsPage : Page, IShellPage
             FullscreenToggle.IsOn = Host.Settings.Fullscreen;
             MinimizeToggle.IsOn = Host.Settings.MinimizeOnLaunch;
             DockFollowToggle.IsOn = Host.Settings.DockFollowExternal;
+            RenderPersonalization();
             OnlineArtToggle.IsOn = Host.Settings.AllowOnlineArtwork;
             GalaxyToggle.IsOn = Host.Settings.PreferGogGalaxy;
             RenderFolders();

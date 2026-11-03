@@ -46,6 +46,9 @@ public sealed class GamepadNavigator : IDisposable
     /// <summary>View + Menu + LB + RB held for 3 seconds - works everywhere.</summary>
     public event Action? EmergencyDesktopRequested;
 
+    /// <summary>Global controller shortcuts (screenshot, overlay) - raised whether or not Lumen is in front.</summary>
+    public event Action<NavAction>? ShortcutRequested;
+
     public void Start() => _timer.Start();
 
     public void SetProfile(ShellPerformanceProfile profile)
@@ -108,6 +111,10 @@ public sealed class GamepadNavigator : IDisposable
                         break;
                     case NavAction.EmergencyDesktop:
                         EmergencyDesktopRequested?.Invoke();
+                        break;
+                    case NavAction.Screenshot:
+                    case NavAction.CycleOverlay:
+                        ShortcutRequested?.Invoke(action);
                         break;
                     default:
                         if (foreground) ActionReceived?.Invoke(action);

@@ -80,6 +80,7 @@ public sealed partial class MainWindow : Window
         _navigator.ActionReceived += OnAction;
         _navigator.QuickAccessRequested += ToggleQuickAccess;
         _navigator.EmergencyDesktopRequested += EmergencyDesktop;
+        _navigator.ShortcutRequested += OnShortcut;
         host.Gamepad.ConnectionChanged += (_, e) =>
         {
             UpdateControllerIcon();
@@ -236,6 +237,25 @@ public sealed partial class MainWindow : Window
 
     internal PerformanceOverlayService Overlay { get; }
 
+    /// <summary>Controller shortcuts that work in games too: View+Y screenshot, View+X overlay mode.</summary>
+    private void OnShortcut(NavAction action)
+    {
+        if (_host.IsSafeMode) return;
+        switch (action)
+        {
+            case NavAction.Screenshot:
+                if (!Lumen.Platform.Windows.Shell.GameBarCapture.IsEnabled())
+                    ShowToast("Game Bar captures are turned off in Windows Settings › Gaming › Captures.");
+                else if (Lumen.Platform.Windows.Shell.GameBarCapture.Screenshot() && IsShellForeground())
+                    ShowToast("Screenshot saved to Videos › Captures");
+                break;
+            case NavAction.CycleOverlay:
+                Overlay.Cycle();
+                if (IsShellForeground()) ShowToast($"Performance overlay: {Overlay.Mode}");
+                break;
+        }
+    }
+
     internal bool IsShellForegroundForOverlay => IsShellForeground();
 
     private bool IsShellForeground() =>
@@ -332,6 +352,17 @@ public sealed partial class MainWindow : Window
             _overlay.HandleAction(action);
             return;
         }
+
+        ThemeService.Play(action switch
+        {
+            NavAction.Up or NavAction.Down or NavAction.Left or NavAction.Right => ElementSoundKind.Focus,
+            NavAction.Accept => ElementSoundKind.Invoke,
+            NavAction.Back => ElementSoundKind.GoBack,
+            NavAction.PreviousTab or NavAction.PreviousSection => ElementSoundKind.MovePrevious,
+            NavAction.NextTab or NavAction.NextSection => ElementSoundKind.MoveNext,
+            NavAction.Menu => ElementSoundKind.Show,
+            _ => ElementSoundKind.Focus,
+        });
 
         if (CurrentPage?.HandleAction(action) == true) return;
 

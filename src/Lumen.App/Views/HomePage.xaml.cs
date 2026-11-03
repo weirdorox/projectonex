@@ -64,9 +64,15 @@ public sealed partial class HomePage : Page, IShellPage
         var favorites = LibraryService.Favorites(games);
         var newest = visible.OrderByDescending(g => g.AddedAt).Take(12).ToList();
 
+        // Dashboard layout (Settings › Personalization). "Recently added" always shows when it is the only row.
+        var settings = Shell.Host.Settings;
+        if (!settings.HomeShowRecent) recent = [];
+        if (!settings.HomeShowFavorites) favorites = [];
         SetShelf(RecentRepeater, RecentSection, recent);
         SetShelf(FavoritesRepeater, FavoritesSection, favorites);
-        SetShelf(NewRepeater, NewSection, recent.Count == 0 && favorites.Count == 0 ? visible.Take(24).ToList() : newest);
+        var showNew = settings.HomeShowNew || (recent.Count == 0 && favorites.Count == 0 && settings.HomePinnedCollection is null);
+        SetShelf(NewRepeater, NewSection, !showNew ? [] : recent.Count == 0 && favorites.Count == 0 ? visible.Take(24).ToList() : newest);
+        _ = RefreshPinnedAsync(settings.HomePinnedCollection);
 
         EmptyState.Visibility = visible.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
@@ -88,6 +94,31 @@ public sealed partial class HomePage : Page, IShellPage
             Stage.SetTint(null);
             _shownHero = null;
         }
+    }
+
+    private async Task RefreshPinnedAsync(string? collectionId)
+    {
+        IReadOnlyList<GameEntry> games = [];
+        string? name = null;
+        if (collectionId is not null)
+        {
+            try
+            {
+                var collection = (await App.Host.Collections.GetAllAsync()).FirstOrDefault(c => c.Id == collectionId);
+                if (collection is not null)
+                {
+                    name = collection.Name;
+                    var ids = new HashSet<string>(await App.Host.Collections.GetGameIdsAsync(collectionId), StringComparer.OrdinalIgnoreCase);
+                    games = LibraryService.AllVisible(Shell.Library.Games).Where(g => ids.Contains(g.Id)).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Lumen.Core.Diagnostics.Log.Warn("Loading pinned collection failed.", ex);
+            }
+        }
+        PinnedHeader.Text = name ?? string.Empty;
+        SetShelf(PinnedRepeater, PinnedSection, games);
     }
 
     /// <summary>Only rebuilds a shelf when its contents actually changed, so focus is not lost needlessly.</summary>
@@ -183,7 +214,7 @@ public sealed partial class HomePage : Page, IShellPage
     // ---------------- controller ----------------
 
     private ItemsRepeater[] VisibleShelves() =>
-        new[] { (RecentRepeater, RecentSection), (FavoritesRepeater, FavoritesSection), (NewRepeater, NewSection) }
+        new[] { (RecentRepeater, RecentSection), (FavoritesRepeater, FavoritesSection), (PinnedRepeater, PinnedSection), (NewRepeater, NewSection) }
             .Where(s => s.Item2.Visibility == Visibility.Visible)
             .Select(s => s.Item1)
             .ToArray();

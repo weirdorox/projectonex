@@ -39,6 +39,7 @@ public partial class App : Application
         Host = AppHost.Create(options);
         Log.Phase("services ready");
 
+        Services.ThemeService.Apply(Host.Settings);
         _window = new MainWindow(Host);
         _window.Activate();
         Log.Phase("main window activated");
