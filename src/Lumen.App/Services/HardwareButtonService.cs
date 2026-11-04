@@ -256,7 +256,7 @@ public sealed class HardwareButtonService : IDisposable
                     $"{binding.Describe()} · vendor HID button id 0x{onex.ButtonId:X2} · report {Convert.ToHexString(e.Report.AsSpan(0, Math.Min(16, e.Report.Length)))}",
                     binding, "can be used"));
             }
-            else if (onex.Pressed && _button is { Kind: ButtonSourceKind.OneX } b && b.ButtonId == onex.ButtonId)
+            else if (onex.Pressed && _button is { Kind: ButtonSourceKind.OneX } onexBinding && onexBinding.ButtonId == onex.ButtonId)
             {
                 Fire($"OneXPlayer {OneXVendorHid.Name(onex.ButtonId)} button");
             }
