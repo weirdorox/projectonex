@@ -60,11 +60,18 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 
 [Run]
 Filename: "{app}\Lumen.exe"; Parameters: "--windowed"; Description: "Open Lumen now (windowed)"; Flags: nowait postinstall skipifsilent
+; In-app update (Lumen starts the installer with /VERYSILENT /LUMENUPDATE=1 and exits): start Lumen again.
+Filename: "{app}\Lumen.exe"; Parameters: "--after-update"; Flags: nowait; Check: IsLumenUpdate
 
 [UninstallRun]
 Filename: "{cmd}"; Parameters: "/C taskkill /IM Lumen.exe /F"; Flags: runhidden; RunOnceId: "StopLumen"
 
 [Code]
+function IsLumenUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:LUMENUPDATE|0}') = '1';
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usUninstall then

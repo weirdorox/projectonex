@@ -50,6 +50,7 @@ public sealed partial class SettingsPage : Page, IShellPage
             RenderPersonalization();
             RenderSteam();
             RenderButtons();
+            RenderUpdates();
             _ = RenderDisplayAsync();
             OnlineArtToggle.IsOn = Host.Settings.AllowOnlineArtwork;
             GalaxyToggle.IsOn = Host.Settings.PreferGogGalaxy;

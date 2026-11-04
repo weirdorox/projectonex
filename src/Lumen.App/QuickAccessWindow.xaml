@@ -264,6 +264,18 @@
                     </VariableSizedWrapGrid>
                     <TextBlock x:Name="PowerConfirmText" Style="{StaticResource LumenCaptionText}" />
 
+                    <TextBlock Text="Lumen updates" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
+                    <TextBlock x:Name="QsUpdateText" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" />
+                    <ProgressBar x:Name="QsUpdateProgress" Maximum="1" Visibility="Collapsed" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="QsUpdateCheckButton" Content="Check" Click="OnQsUpdateCheckClick" HorizontalAlignment="Stretch" />
+                        <Button x:Name="QsUpdateActionButton" Grid.Column="1" Content="Download" Click="OnQsUpdateActionClick" HorizontalAlignment="Stretch" />
+                    </Grid>
+
                     <TextBlock Text="Capture &amp; keyboard" Style="{StaticResource LumenBodyText}" FontWeight="SemiBold" />
                     <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="128" ItemHeight="56">
                         <Button Content="Screenshot" Click="OnScreenshotClick" HorizontalAlignment="Stretch" Margin="0,0,8,8" />

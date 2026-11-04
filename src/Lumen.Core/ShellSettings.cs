@@ -198,6 +198,20 @@ public sealed class ShellSettings
         set => SetBool("qs.takeFocus", value);
     }
 
+    // ---- updates ----
+
+    public Lumen.Core.Updates.UpdateChannel UpdateChannel
+    {
+        get => _store.Get("update.channel") == "beta" ? Lumen.Core.Updates.UpdateChannel.Beta : Lumen.Core.Updates.UpdateChannel.Stable;
+        set => _store.Set("update.channel", value == Lumen.Core.Updates.UpdateChannel.Beta ? "beta" : "stable");
+    }
+
+    public DateTimeOffset? LastUpdateCheck
+    {
+        get => DateTimeOffset.TryParse(_store.Get("update.lastCheck"), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var v) ? v : null;
+        set => _store.Set("update.lastCheck", value?.ToString("O", System.Globalization.CultureInfo.InvariantCulture) ?? "");
+    }
+
     public bool FirstRunCompleted
     {
         get => GetBool("shell.firstRunCompleted", false);

@@ -21,25 +21,29 @@ param(
     [string] $TimestampUrl = 'http://timestamp.digicert.com',
     [switch] $NoInstaller,
     # Intel PresentMon console exe (MIT) for real FPS telemetry; optional. CI sets LUMEN_PRESENTMON.
-    [string] $PresentMon = $env:LUMEN_PRESENTMON
+    [string] $PresentMon = $env:LUMEN_PRESENTMON,
+    # Release version (e.g. 0.4.0 or 0.4.0-beta.1). Default: <Version> from Directory.Build.props.
+    [string] $Version
 )
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $rid = if ($Platform -eq 'ARM64') { 'win-arm64' } else { 'win-x64' }
 $out = Join-Path $root 'artifacts/publish/Lumen'
+$versionArgs = @()
+if ($Version) { $versionArgs = @("-p:Version=$Version") }
 
 Push-Location $root
 try {
     if (Test-Path $out) { Remove-Item $out -Recurse -Force }
 
     Write-Host "== Publishing Lumen ($rid, self-contained) ==" -ForegroundColor Cyan
-    dotnet publish src/Lumen.App/Lumen.App.csproj -c Release -r $rid -p:Platform=$Platform `
+    dotnet publish src/Lumen.App/Lumen.App.csproj -c Release -r $rid -p:Platform=$Platform @versionArgs `
         --self-contained true -p:WindowsAppSDKSelfContained=true -p:PublishReadyToRun=true -o $out
     if ($LASTEXITCODE -ne 0) { throw "App publish failed" }
 
     Write-Host "== Publishing Lumen.PowerHelper ==" -ForegroundColor Cyan
-    dotnet publish src/Lumen.PowerHelper/Lumen.PowerHelper.csproj -c Release -r $rid --self-contained true -o $out
+    dotnet publish src/Lumen.PowerHelper/Lumen.PowerHelper.csproj -c Release -r $rid --self-contained true @versionArgs -o $out
     if ($LASTEXITCODE -ne 0) { throw "PowerHelper publish failed" }
 
     if ($PresentMon -and (Test-Path $PresentMon)) {
@@ -55,7 +59,7 @@ try {
     }
 
     Write-Host "== Publishing Lumen.Recovery ==" -ForegroundColor Cyan
-    dotnet publish src/Lumen.Recovery/Lumen.Recovery.csproj -c Release -r $rid --self-contained true -o $out
+    dotnet publish src/Lumen.Recovery/Lumen.Recovery.csproj -c Release -r $rid --self-contained true @versionArgs -o $out
     if ($LASTEXITCODE -ne 0) { throw "Recovery publish failed" }
 
     if ($CertificateThumbprint) {
@@ -82,7 +86,7 @@ try {
         }
         else {
             Write-Host "== Building installer ==" -ForegroundColor Cyan
-            $version = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version | Select-Object -First 1
+            $version = if ($Version) { $Version } else { ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version | Select-Object -First 1 }
             & $iscc "/DAppVersion=$version" "/DSourceDir=$out" installer/inno/Lumen.iss
             if ($LASTEXITCODE -ne 0) { throw "Installer build failed" }
 

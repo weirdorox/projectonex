@@ -206,3 +206,26 @@ Repeat 5× each: power button sleep, QAM › Sleep, lid/screen-off timeout; on A
 - [ ] Brightness slider changes an external monitor (DDC/CI on) and the built-in panel; unsupported → disabled with explanation
 - [ ] HDR toggle visible; switching matches Windows Settings; on a non-HDR display it is disabled with the reason
 - [ ] QAM › System › Wi-Fi networks lists networks; connect to a saved one; enter a password with the on-screen keyboard (symbols via #+=); wrong password says so; tapping the connected network disconnects
+
+### I. Global Quick settings button (OneXPlayer 3)
+
+- [ ] Settings › Quick settings button › Detect, press the OneXPlayer button(s): record what is listed (type, device, codes) - or "no input received"
+- [ ] Use it; from the desktop, Notepad, Steam and a borderless game: press → panel slides in on the right, the game keeps focus (keeps running, no minimise, no resolution change, taskbar does not appear), press again → gone
+- [ ] Dashboard stays hidden/minimised throughout
+- [ ] Controller in the open panel: D-pad/stick move, A selects, B closes, LB/RB switch tabs; note that the game also sees these presses
+- [ ] Hammer the button 10× fast: one panel, no flicker, ends open or closed consistently
+- [ ] Sleep/resume, then press again: works without restarting Lumen
+- [ ] Ctrl+Alt+Q (fallback) works the same; change it via Detect › Use as keyboard shortcut
+- [ ] Exclusive-fullscreen game: record whether the panel is visible (Windows may not show it)
+- [ ] If OneXConsole is running: record whether it intercepts the button
+
+### J. Updates (end-to-end - requires a public repo and the LUMEN_UPDATE_KEY secret)
+
+- [ ] Install release N; publish N+1 → Check shows N+1 with notes, date, size
+- [ ] Download shows progress; disconnect Wi-Fi mid-way → resumes after reconnect
+- [ ] Install and restart → Lumen closes, installer runs silently, Lumen starts as N+1 with the same settings, library, favorites, profiles, theme
+- [ ] With a game running: Install is disabled with the reason
+- [ ] Beta channel sees N+1-beta.1; Stable does not
+- [ ] Tamper test: edit a byte of the downloaded `%LOCALAPPDATA%\Lumen\updates\*.partial` before it finishes → rejected
+- [ ] Rollback from Settings (or safe mode) returns to N
+- [ ] Offline / rate limited → clear message, no crash

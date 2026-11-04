@@ -19,6 +19,9 @@
                 <Button x:Name="DisableButton" Click="OnDisableClick" HorizontalAlignment="Stretch">
                     <TextBlock Text="Stop Lumen from starting automatically" />
                 </Button>
+                <Button x:Name="RollbackButton" Click="OnRollbackClick" HorizontalAlignment="Stretch" Visibility="Collapsed">
+                    <TextBlock x:Name="RollbackText" Text="Roll back the last update" />
+                </Button>
                 <Button Click="OnLogsClick" HorizontalAlignment="Stretch">
                     <TextBlock Text="Open the log folder" />
                 </Button>

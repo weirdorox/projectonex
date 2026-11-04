@@ -9,6 +9,32 @@
     <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled">
         <StackPanel Padding="48,8,48,48" Spacing="22" MaxWidth="980" HorizontalAlignment="Left">
 
+            <!-- ================= System › Updates ================= -->
+            <TextBlock Text="System › Updates" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Name="UpdateVersionText" Style="{StaticResource LumenBodyText}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Channel" Style="{StaticResource LumenBodyText}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <Button x:Name="ChannelStableButton" Content="Stable" Style="{StaticResource LumenPillButtonStyle}" Click="OnChannelStableClick" />
+                        <Button x:Name="ChannelBetaButton" Content="Beta" Style="{StaticResource LumenPillButtonStyle}" Click="OnChannelBetaClick" />
+                    </StackPanel>
+                    <TextBlock x:Name="UpdateStatusText" Style="{StaticResource LumenBodyText}" TextWrapping="Wrap" FontWeight="SemiBold" />
+                    <ProgressBar x:Name="UpdateProgress" Maximum="1" Visibility="Collapsed" MaxWidth="520" HorizontalAlignment="Left" Width="520" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button x:Name="UpdateCheckButton" Content="Check for updates" Click="OnUpdateCheckClick" Style="{StaticResource LumenAccentButtonStyle}" />
+                        <Button x:Name="UpdateDownloadButton" Content="Download update" Click="OnUpdateDownloadClick" />
+                        <Button x:Name="UpdateInstallButton" Content="Install and restart" Click="OnUpdateInstallClick" />
+                        <Button x:Name="UpdateNotesButton" Content="View release notes" Click="OnUpdateNotesClick" />
+                        <Button x:Name="UpdateRetryButton" Content="Retry" Click="OnUpdateRetryClick" />
+                        <Button x:Name="UpdateRollbackButton" Content="Roll back" Click="OnUpdateRollbackClick" />
+                    </StackPanel>
+                    <TextBlock x:Name="UpdateNotesText" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" IsTextSelectionEnabled="True" Visibility="Collapsed" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap"
+                               Text="Updates come from Lumen's GitHub releases and are only installed if they carry Lumen's release signature and match its checksum. Your settings, library, favorites, profiles and themes are kept. Lumen never installs while a game is running, and keeps the previous version's installer so an update can be rolled back." />
+                </StackPanel>
+            </Border>
+
             <!-- ================= Display & sound ================= -->
             <TextBlock Text="Display &amp; sound" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
             <Border Style="{StaticResource LumenCardStyle}">

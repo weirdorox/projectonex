@@ -7,7 +7,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <Company>Lumen</Company>
     <Product>Lumen Handheld Shell</Product>
-    <Version>0.1.0</Version>
+    <Version>0.3.0-dev</Version>
     <Deterministic>true</Deterministic>
     <!-- Keep CI green while the codebase is young; tighten to true once warnings are triaged. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>

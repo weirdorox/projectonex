@@ -21,6 +21,13 @@ public sealed partial class SafeModePage : Page, IShellPage
         Loaded += (_, _) =>
         {
             ReasonText.Text = App.Host.SafeModeReason ?? "Safe mode was requested.";
+            // A crash right after an update: offer the verified previous version.
+            var journal = Lumen.Core.Updates.UpdateJournal.Load(Lumen.Core.Updates.UpdateJournal.JournalPath(App.Host.Paths.Root));
+            if (journal.Phase is Lumen.Core.Updates.UpdatePhase.Installed or Lumen.Core.Updates.UpdatePhase.Installing && journal.PreviousInstallerPath is not null)
+            {
+                RollbackButton.Visibility = Visibility.Visible;
+                RollbackText.Text = $"Roll back the update (back to Lumen {journal.FromVersion})";
+            }
             DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, FocusDefault);
         };
     }
@@ -47,6 +54,19 @@ public sealed partial class SafeModePage : Page, IShellPage
         {
             Log.Error("Disabling autostart from safe mode failed.", ex);
             ResultText.Text = $"That didn't work: {ex.Message}";
+        }
+    }
+
+    private void OnRollbackClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var _ = Process.Start(new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "Lumen.Recovery.exe"), "--rollback-update --quiet") { UseShellExecute = true });
+            ResultText.Text = "Rolling back - Lumen closes and the previous version starts.";
+        }
+        catch (Exception ex)
+        {
+            ResultText.Text = "Could not start the rollback: " + ex.Message;
         }
     }
 

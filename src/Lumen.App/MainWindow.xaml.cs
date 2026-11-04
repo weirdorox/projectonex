@@ -259,6 +259,10 @@ public sealed partial class MainWindow : Window
 
     internal HardwareButtonService? Buttons { get; private set; }
 
+    internal UpdateService? Updates { get; private set; }
+
+    internal bool IsDashboardInFront => DesktopSwitcher.IsForeground(_hwnd);
+
     internal PerformanceOverlayService Overlay { get; }
 
     internal MouseModeService MouseMode { get; }
@@ -725,6 +729,8 @@ public sealed partial class MainWindow : Window
                 _overlay.Prewarm();
                 Buttons = new HardwareButtonService(_host, _navigator, ToggleQuickAccess);
                 Buttons.Start();
+                Updates = new UpdateService(_host, this, DispatcherQueue);
+                Updates.Start();
             }
             if (Environment.GetEnvironmentVariable("LUMEN_SMOKE_UI") == "1") await RunUiSmokeAsync();
         }

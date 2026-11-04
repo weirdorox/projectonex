@@ -12,6 +12,7 @@ namespace Lumen.Recovery;
 ///   Lumen.Recovery.exe --restore           close Lumen, remove autostart, safe mode next start, ensure desktop
 ///   Lumen.Recovery.exe --disable-autologon turn off automatic sign-in (asks for administrator rights)
 ///   Lumen.Recovery.exe --remove-power-helper remove the elevated TDP helper task (administrator)
+///   Lumen.Recovery.exe --rollback-update   reinstall the previous Lumen version after a bad update
 ///   Lumen.Recovery.exe --all               all of the above
 ///   add --quiet to skip the final "press a key"
 /// </summary>
@@ -32,6 +33,12 @@ internal static class Program
                 Restore(paths);
                 DisableAutoLogon(args);
                 RemovePowerHelper();
+            }
+            else if (a.Contains("--rollback-update"))
+            {
+                var ok = RollBackUpdate(paths);
+                Pause(quiet);
+                return ok ? 0 : 2;
             }
             else if (a.Contains("--remove-power-helper"))
             {
@@ -187,6 +194,31 @@ internal static class Program
             Log.Warn($"Recovery step '{name}' failed.", ex);
             Console.WriteLine($"failed ({ex.Message})");
         }
+    }
+
+    /// <summary>Reinstalls the previous Lumen version with its verified installer (after a bad update).</summary>
+    private static bool RollBackUpdate(Lumen.Core.AppPaths paths)
+    {
+        var journalPath = Lumen.Core.Updates.UpdateJournal.JournalPath(paths.Root);
+        var journal = Lumen.Core.Updates.UpdateJournal.Load(journalPath);
+        if (journal.VerifiedPreviousInstaller() is not { } installer)
+        {
+            Console.WriteLine("No verified previous Lumen installer is available - reinstall Lumen from GitHub instead.");
+            return false;
+        }
+        Console.WriteLine($"Rolling back to Lumen {journal.FromVersion} …");
+        journal.Phase = Lumen.Core.Updates.UpdatePhase.Installing;
+        (journal.FromVersion, journal.ToVersion) = (journal.ToVersion, journal.FromVersion);
+        journal.InstallerPath = installer;
+        journal.PreviousInstallerPath = null;
+        journal.PreviousInstallerSha256 = null;
+        journal.StartsSinceInstall = 0;
+        journal.Save(journalPath);
+        using var _ = Process.Start(new ProcessStartInfo(installer,
+            $"/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /SP- /LUMENUPDATE=1 /LOG=\"{Path.Combine(paths.Root, "updates", "rollback.log")}\"")
+        { UseShellExecute = true });
+        Log.Info($"Rollback started with {installer}.");
+        return true;
     }
 
     private static void Pause(bool quiet)

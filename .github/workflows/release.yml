@@ -1,0 +1,127 @@
+name: release
+
+# Builds a versioned, signed Lumen release when a version tag is pushed (v1.2.3 or v1.2.3-beta.1)
+# and creates it as a DRAFT GitHub Release. Nothing reaches users until the owner reviews the draft
+# and presses "Publish release" - that click is the approval. Tags with a pre-release suffix are
+# marked as pre-releases (Lumen's Beta channel); plain tags are stable releases.
+#
+# Requires the repository secret LUMEN_UPDATE_KEY (the update signing private key, PEM). Releases are
+# never created unsigned. Optional code signing: see docs/UPDATES.md.
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version from tag
+        id: v
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          if ($tag -notmatch '^v(\d+\.\d+\.\d+)(-[0-9A-Za-z.-]+)?$') { throw "Tag '$tag' must look like v1.2.3 or v1.2.3-beta.1" }
+          $version = $tag.Substring(1)
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "prerelease=$(if ($Matches[2]) { 'true' } else { 'false' })" >> $env:GITHUB_OUTPUT
+          Write-Host "Releasing Lumen $version"
+
+      - name: Check the signing key before building
+        shell: pwsh
+        env:
+          LUMEN_UPDATE_KEY: ${{ secrets.LUMEN_UPDATE_KEY }}
+        run: |
+          if (-not $env:LUMEN_UPDATE_KEY) { throw "Secret LUMEN_UPDATE_KEY is missing - refusing to build an unsigned release (see docs/UPDATES.md)." }
+          $openssl = (Get-Command openssl -ErrorAction SilentlyContinue).Source
+          if (-not $openssl) { $openssl = 'C:\Program Files\Git\usr\bin\openssl.exe' }
+          "OPENSSL=$openssl" >> $env:GITHUB_ENV
+          $key = Join-Path $env:RUNNER_TEMP 'k.pem'
+          [IO.File]::WriteAllText($key, $env:LUMEN_UPDATE_KEY)
+          & $openssl ec -in $key -pubout -out (Join-Path $env:RUNNER_TEMP 'pub.pem') 2>$null
+          $derived = (Get-Content (Join-Path $env:RUNNER_TEMP 'pub.pem') -Raw).Replace("`r", '').Trim()
+          $expected = (Get-Content installer/update-public-key.pem -Raw).Replace("`r", '').Trim()
+          Remove-Item $key -Force
+          if ($derived -ne $expected) { throw "LUMEN_UPDATE_KEY does not match installer/update-public-key.pem (the key Lumen trusts)." }
+
+      - name: Tests
+        shell: pwsh
+        run: |
+          dotnet test tests/Lumen.Core.Tests/Lumen.Core.Tests.csproj -c Release
+          dotnet test tests/Lumen.Data.Tests/Lumen.Data.Tests.csproj -c Release
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Fetch PresentMon (FPS telemetry, MIT licensed)
+        shell: pwsh
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Force third_party/presentmon | Out-Null
+          gh release download --repo GameTechDev/PresentMon --pattern 'PresentMon-*-x64.exe' --dir third_party/presentmon --clobber
+          gh api repos/GameTechDev/PresentMon/contents/LICENSE.txt -H "Accept: application/vnd.github.raw" > third_party/presentmon/LICENSE.txt
+          $exe = Get-ChildItem third_party/presentmon -Filter 'PresentMon-*-x64.exe' | Select-Object -First 1
+          if ($exe) { "LUMEN_PRESENTMON=$($exe.FullName)" >> $env:GITHUB_ENV }
+
+      - name: Publish + installer
+        shell: pwsh
+        run: ./scripts/publish.ps1 -Version ${{ steps.v.outputs.version }}
+
+      - name: Start-up and UI smoke test
+        shell: pwsh
+        run: ./scripts/smoke.ps1
+
+      - name: Signed update metadata
+        shell: pwsh
+        env:
+          LUMEN_UPDATE_KEY: ${{ secrets.LUMEN_UPDATE_KEY }}
+        run: |
+          $version = '${{ steps.v.outputs.version }}'
+          $name = "Lumen-Setup-$version-x64.exe"
+          $installer = Join-Path artifacts/installer $name
+          if (-not (Test-Path $installer)) { throw "Installer $name was not built" }
+          $sig = Get-AuthenticodeSignature $installer
+          Write-Host "Installer Authenticode: $($sig.Status) $($sig.SignerCertificate.Subject)"
+          $manifest = [ordered]@{
+            product   = 'Lumen'
+            version   = $version
+            channel   = if ('${{ steps.v.outputs.prerelease }}' -eq 'true') { 'beta' } else { 'stable' }
+            installer = $name
+            size      = (Get-Item $installer).Length
+            sha256    = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+            commit    = '${{ github.sha }}'
+          } | ConvertTo-Json -Compress
+          $out = 'artifacts/release'
+          New-Item -ItemType Directory -Force $out | Out-Null
+          [IO.File]::WriteAllText((Join-Path $out 'lumen-update.json'), $manifest, (New-Object Text.UTF8Encoding($false)))
+          $key = Join-Path $env:RUNNER_TEMP 'k.pem'
+          [IO.File]::WriteAllText($key, $env:LUMEN_UPDATE_KEY)
+          & $env:OPENSSL dgst -sha256 -sign $key -out (Join-Path $out 'lumen-update.json.sig') (Join-Path $out 'lumen-update.json')
+          Remove-Item $key -Force
+          & $env:OPENSSL dgst -sha256 -verify installer/update-public-key.pem -signature (Join-Path $out 'lumen-update.json.sig') (Join-Path $out 'lumen-update.json')
+          if ($LASTEXITCODE -ne 0) { throw "Signature self-check failed" }
+          Copy-Item $installer $out
+          Get-ChildItem $out | Format-Table Name, Length
+          Write-Host $manifest
+
+      - name: Create DRAFT release (publish it on GitHub to approve)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $flags = @('--draft', '--generate-notes', '--title', "Lumen ${{ steps.v.outputs.version }}")
+          if ('${{ steps.v.outputs.prerelease }}' -eq 'true') { $flags += '--prerelease' }
+          gh release create $tag @flags (Get-ChildItem artifacts/release).FullName
+          Write-Host "Draft release created. Review it and press 'Publish release' to make it available to Lumen."

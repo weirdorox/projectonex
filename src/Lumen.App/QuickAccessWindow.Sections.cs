@@ -170,6 +170,7 @@ public sealed partial class QuickAccessWindow
         OverlayFullscreenToggle.IsOn = App.Host.Settings.Fullscreen;
         OverlayMinimizeToggle.IsOn = App.Host.Settings.MinimizeOnLaunch;
         MouseModeToggle.IsOn = _main.MouseMode.Enabled;
+        RenderUpdateStatus();
         MouseModeToggle.IsEnabled = _main.RunningGame is null;
         _updating = false;
 
