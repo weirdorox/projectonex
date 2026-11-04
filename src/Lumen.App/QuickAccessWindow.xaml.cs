@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Lumen.App.Input;
+using Lumen.App.Services;
 using Lumen.Core.Diagnostics;
 using Lumen.Core.Hardware;
 using Lumen.Core.Input;
@@ -61,8 +62,15 @@ public sealed partial class QuickAccessWindow : Window
         Activated += (_, e) =>
         {
             // Tapping outside (into a game or the desktop) dismisses the panel.
-            if (e.WindowActivationState == WindowActivationState.Deactivated && IsOpen) HideOverlay();
+            // (Compatibility mode only - in the default mode the panel never becomes active.)
+            if (e.WindowActivationState == WindowActivationState.Deactivated && IsOpen && _tookFocus) HideOverlay();
         };
+
+        // Translucent dark panel (acrylic falls back to solid automatically, e.g. in battery saver).
+        try { SystemBackdrop = new Microsoft.UI.Xaml.Media.DesktopAcrylicBackdrop(); } catch { /* not supported */ }
+        if (Root.Background is SolidColorBrush surface)
+            Root.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xD0, surface.Color.R, surface.Color.G, surface.Color.B));
+        FocusHighlight.Attach(Root);
 
         _statsTimer = DispatcherQueue.CreateTimer();
         _statsTimer.IsRepeating = true;
@@ -81,21 +89,44 @@ public sealed partial class QuickAccessWindow : Window
     public IntPtr Hwnd => _hwnd;
     public bool IsOpen { get; private set; }
 
-    public async void ShowOverlay()
+    /// <summary>
+    /// Opens the panel over whatever is in front (game, desktop, another app) without touching the
+    /// Lumen dashboard. By default the panel never takes focus: the game stays the active window
+    /// (no minimise, no resolution change, no Alt+Tab) and Lumen drives the panel from the
+    /// controller itself. <paramref name="takeFocus"/> is the compatibility mode.
+    /// </summary>
+    public async void ShowOverlay(bool takeFocus = false)
     {
+        if (IsOpen) return;
         try
         {
-            CaptureTarget(); // must run before we take the foreground
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            CaptureTarget(); // must run before anything changes the foreground
+            _previousForeground = OtherForegroundWindow();
+            _tookFocus = takeFocus;
             PositionOnRightEdge();
-            AppWindow.Show();
-            Activate();
-            DesktopSwitcher.BringToForeground(_hwnd);
+            SetNoActivate(!takeFocus);
+            Root.Translation = new System.Numerics.Vector3((float)PanelWidthEpx, 0, 0);
+            if (takeFocus)
+            {
+                AppWindow.Show();
+                Activate();
+                DesktopSwitcher.BringToForeground(_hwnd);
+            }
+            else
+            {
+                AppWindow.Show(false); // SW_SHOWNOACTIVATE
+                SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+            }
             IsOpen = true;
+            SlideIn();
             UpdateHeader();
             SetSection(_targetGame is null ? 0 : GameSection, focus: false);
             RenderGameSection();
             _ = RenderSystemSectionAsync();
             DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => FocusNavigation.Focus(HomeButton));
+            Log.Info($"Quick settings opened ({(takeFocus ? "took focus" : "game keeps focus")}) in {watch.ElapsedMilliseconds} ms; " +
+                     $"dashboard in front: {DesktopSwitcher.IsForeground(_main.Hwnd)}.");
 
             _hw ??= await App.Host.Hardware.Value;
             RefreshControls();
@@ -116,7 +147,80 @@ public sealed partial class QuickAccessWindow : Window
         IsOpen = false;
         _statsTimer.Stop();
         AppWindow.Hide();
+        // Only if we took focus: give it back to exactly what was in front before.
+        if (_tookFocus && _previousForeground != IntPtr.Zero && IsWindow(_previousForeground) && IsWindowVisible(_previousForeground))
+            SetForegroundWindow(_previousForeground);
+        _tookFocus = false;
+        Log.Info("Quick settings closed.");
     }
+
+    /// <summary>
+    /// Creates the window's content once at start-up (off-screen) so the first press is instant and
+    /// later opens never need to activate anything.
+    /// </summary>
+    public void Prewarm()
+    {
+        try
+        {
+            var before = GetForegroundWindow();
+            SetNoActivate(true);
+            AppWindow.MoveAndResize(new RectInt32(-32000, -32000, 10, 10));
+            AppWindow.Show(false);
+            AppWindow.Hide();
+            if (before != IntPtr.Zero && GetForegroundWindow() != before) SetForegroundWindow(before);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Quick settings prewarm failed.", ex);
+        }
+    }
+
+    private IntPtr _previousForeground;
+    private bool _tookFocus;
+
+    private IntPtr OtherForegroundWindow()
+    {
+        var fg = GetForegroundWindow();
+        if (fg == IntPtr.Zero) return IntPtr.Zero;
+        GetWindowThreadProcessId(fg, out var pid);
+        return pid == (uint)Environment.ProcessId ? IntPtr.Zero : fg;
+    }
+
+    private void SetNoActivate(bool on)
+    {
+        var ex = GetWindowLongPtr(_hwnd, GWL_EXSTYLE).ToInt64();
+        ex = on ? ex | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST : ex & ~WS_EX_NOACTIVATE;
+        SetWindowLongPtr(_hwnd, GWL_EXSTYLE, new IntPtr(ex));
+    }
+
+    private void SlideIn()
+    {
+        Root.TranslationTransition = null;
+        Root.Translation = new System.Numerics.Vector3((float)PanelWidthEpx, 0, 0);
+        DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () =>
+        {
+            Root.TranslationTransition = Motion.Vector(180);
+            Root.Translation = System.Numerics.Vector3.Zero;
+        });
+    }
+
+    private const int GWL_EXSTYLE = -20;
+    private const long WS_EX_TOPMOST = 0x8, WS_EX_TOOLWINDOW = 0x80, WS_EX_NOACTIVATE = 0x8000000;
+    private static readonly IntPtr HWND_TOPMOST = new(-1);
+    private const uint SWP_NOSIZE = 0x1, SWP_NOMOVE = 0x2, SWP_NOACTIVATE = 0x10, SWP_SHOWWINDOW = 0x40;
+
+    [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hwnd);
+    [DllImport("user32.dll")] private static extern bool IsWindow(IntPtr hwnd);
+    [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] private static extern IntPtr GetWindowLongPtr(IntPtr hwnd, int index);
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] private static extern IntPtr SetWindowLongPtr(IntPtr hwnd, int index, IntPtr value);
+    [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT { public int Left, Top, Right, Bottom; }
 
     public void CloseForGood()
     {
@@ -161,7 +265,10 @@ public sealed partial class QuickAccessWindow : Window
 
     private void PositionOnRightEdge()
     {
-        var area = DisplayArea.GetFromWindowId(_main.AppWindow.Id, DisplayAreaFallback.Primary);
+        // The display the game/app in front is on - not necessarily where the dashboard is.
+        var area = _previousForeground != IntPtr.Zero && GetWindowRect(_previousForeground, out var r) && r.Right > r.Left
+            ? DisplayArea.GetFromRect(new RectInt32(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top), DisplayAreaFallback.Primary)
+            : DisplayArea.GetFromWindowId(_main.AppWindow.Id, DisplayAreaFallback.Primary);
         var bounds = area.OuterBounds;
         var dpi = GetDpiForWindow(_hwnd);
         var scale = dpi == 0 ? 1.0 : dpi / 96.0;

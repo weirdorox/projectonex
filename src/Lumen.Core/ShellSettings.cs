@@ -175,6 +175,29 @@ public sealed class ShellSettings
         set => SetBool("steam.showOwned", value);
     }
 
+    // ---- Quick settings button ----
+
+    /// <summary>The detected OEM/hardware button (serialised <see cref="Lumen.Core.Input.ButtonBinding"/>), or null.</summary>
+    public string? QuickSettingsButton
+    {
+        get => _store.Get("qs.button") is { Length: > 0 } v ? v : null;
+        set => _store.Set("qs.button", value ?? "");
+    }
+
+    /// <summary>Keyboard fallback shortcut (default Ctrl+Alt+Q).</summary>
+    public string QuickSettingsShortcut
+    {
+        get => _store.Get("qs.shortcut") is { Length: > 0 } v ? v : Lumen.Core.Input.ButtonBinding.DefaultKeyboard.Serialize();
+        set => _store.Set("qs.shortcut", value);
+    }
+
+    /// <summary>Compatibility: let Quick settings take focus from the game (off = the game keeps focus).</summary>
+    public bool QuickSettingsTakesFocus
+    {
+        get => GetBool("qs.takeFocus", false);
+        set => SetBool("qs.takeFocus", value);
+    }
+
     public bool FirstRunCompleted
     {
         get => GetBool("shell.firstRunCompleted", false);

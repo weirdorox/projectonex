@@ -37,6 +37,26 @@
                 </StackPanel>
             </Border>
 
+            <!-- ================= Quick settings button ================= -->
+            <TextBlock Text="Quick settings button" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
+            <Border Style="{StaticResource LumenCardStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap"
+                               Text="Open Quick settings from anywhere - over games, the desktop or Steam - without bringing back the dashboard. Press Detect, then press the OneXPlayer button: Lumen lists exactly what Windows receives (key combination, HID report or controller buttons). If nothing appears, the button is handled by the firmware or OneXConsole and never reaches Windows - map it to a key combination in OneXConsole and detect that instead." />
+                    <TextBlock x:Name="ButtonStatusText" Style="{StaticResource LumenBodyText}" TextWrapping="Wrap" />
+                    <TextBlock x:Name="ShortcutStatusText" Style="{StaticResource LumenBodyText}" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource LumenCaptionText}" Text="Controller: View + Menu always works too." />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button x:Name="DetectButton" Content="Detect a button" Click="OnDetectClick" Style="{StaticResource LumenAccentButtonStyle}" />
+                        <Button Content="Remove hardware button" Click="OnRemoveButtonClick" />
+                        <Button Content="Reset shortcut to Ctrl+Alt+Q" Click="OnResetShortcutClick" />
+                    </StackPanel>
+                    <TextBlock x:Name="DetectHint" Style="{StaticResource LumenCaptionText}" TextWrapping="Wrap" Visibility="Collapsed" />
+                    <StackPanel x:Name="DetectList" Spacing="6" />
+                    <ToggleSwitch x:Name="QsFocusToggle" Header="Compatibility: let Quick settings take focus from the game (some games pause or mute)" Toggled="OnQsFocusToggled" />
+                </StackPanel>
+            </Border>
+
             <!-- ================= Steam account ================= -->
             <TextBlock Text="Steam account" Style="{StaticResource LumenSectionHeader}" FontSize="24" />
             <Border Style="{StaticResource LumenCardStyle}">

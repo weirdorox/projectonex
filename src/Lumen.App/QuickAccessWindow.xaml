@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Lumen Quick Access">
 
-    <Grid Background="{StaticResource LumenSurfaceBrush}" BorderBrush="{StaticResource LumenStrokeBrush}" BorderThickness="1,0,0,0">
+    <Grid x:Name="Root" Background="{StaticResource LumenSurfaceBrush}" BorderBrush="{StaticResource LumenStrokeBrush}" BorderThickness="1,0,0,0">
         <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Hidden" HorizontalScrollMode="Disabled">
             <StackPanel Padding="24,28,24,28" Spacing="20">
 

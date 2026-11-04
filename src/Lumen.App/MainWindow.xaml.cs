@@ -76,9 +76,9 @@ public sealed partial class MainWindow : Window
         });
 
         // ---- controller ----
-        _navigator = new GamepadNavigator(DispatcherQueue, host.Gamepad, IsShellForeground);
+        _navigator = new GamepadNavigator(DispatcherQueue, host.Gamepad, ShouldHandleInput);
         _navigator.ActionReceived += OnAction;
-        _navigator.QuickAccessRequested += ToggleQuickAccess;
+        _navigator.QuickAccessRequested += () => ToggleQuickAccess("controller View+Menu");
         _navigator.EmergencyDesktopRequested += EmergencyDesktop;
         _navigator.ShortcutRequested += OnShortcut;
         MouseMode = new MouseModeService(this, _navigator);
@@ -212,6 +212,7 @@ public sealed partial class MainWindow : Window
         DesktopSwitcher.BringToForeground(_hwnd);
         Activate();
         _navigator.Resume();
+        Buttons?.Resume();
         _ = Library.LoadAsync();
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () => CurrentPage?.FocusDefault());
     }
@@ -229,12 +230,34 @@ public sealed partial class MainWindow : Window
     // Quick access overlay
     // =====================================================================================
 
-    public void ToggleQuickAccess()
+    private readonly ToggleDebouncer _quickDebounce = new(TimeSpan.FromMilliseconds(300));
+    private readonly System.Diagnostics.Stopwatch _quickClock = System.Diagnostics.Stopwatch.StartNew();
+
+    /// <summary>Toggles Quick settings. Never shows, activates or navigates the dashboard.</summary>
+    public void ToggleQuickAccess() => ToggleQuickAccess("Lumen");
+
+    public void ToggleQuickAccess(string source)
     {
+        if (!_quickDebounce.Accept(_quickClock.Elapsed))
+        {
+            Log.Debug($"Quick settings toggle ignored (repeat press, {source}).");
+            return;
+        }
         _overlay ??= new QuickAccessWindow(this);
-        if (_overlay.IsOpen) _overlay.HideOverlay();
-        else _overlay.ShowOverlay();
+        if (_overlay.IsOpen)
+        {
+            _overlay.HideOverlay();
+        }
+        else
+        {
+            // Inside Lumen the panel can take focus as before; over other apps the game keeps it.
+            var fromDashboard = DesktopSwitcher.IsForeground(_hwnd);
+            _overlay.ShowOverlay(takeFocus: fromDashboard || _host.Settings.QuickSettingsTakesFocus);
+        }
+        Log.Info($"Quick settings toggled by {source} -> {(_overlay.IsOpen ? "open" : "closed")}.");
     }
+
+    internal HardwareButtonService? Buttons { get; private set; }
 
     internal PerformanceOverlayService Overlay { get; }
 
@@ -262,10 +285,13 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    internal bool IsShellForegroundForOverlay => IsShellForeground();
+    internal bool IsShellForegroundForOverlay => ShouldHandleInput();
 
     private bool IsShellForeground() =>
         DesktopSwitcher.IsForeground(_hwnd) || (_overlay?.IsOpen == true && DesktopSwitcher.IsForeground(_overlay.Hwnd));
+
+    /// <summary>Lumen should handle controller input: dashboard in front, or Quick settings open (even over a game).</summary>
+    private bool ShouldHandleInput() => IsShellForeground() || _overlay?.IsOpen == true;
 
     // =====================================================================================
     // Navigation
@@ -378,7 +404,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        if (_overlay?.IsOpen == true && DesktopSwitcher.IsForeground(_overlay.Hwnd))
+        if (_overlay?.IsOpen == true)
         {
             _overlay.HandleAction(action);
             return;
@@ -692,6 +718,13 @@ public sealed partial class MainWindow : Window
             await Task.Delay(1500); // let the first frame settle
             await _host.Hardware.Value;
             await EvaluateDockAsync();
+            if (!_host.IsSafeMode)
+            {
+                _overlay ??= new QuickAccessWindow(this);
+                _overlay.Prewarm();
+                Buttons = new HardwareButtonService(_host, _navigator, ToggleQuickAccess);
+                Buttons.Start();
+            }
             if (Environment.GetEnvironmentVariable("LUMEN_SMOKE_UI") == "1") await RunUiSmokeAsync();
         }
         catch (Exception ex)
@@ -723,6 +756,7 @@ public sealed partial class MainWindow : Window
         _host.Power.Dispose();
         _overlay?.CloseForGood();
         Overlay.Shutdown();
+        Buttons?.Dispose();
         if (_host.Hardware.IsValueCreated && _host.Hardware.Value.IsCompletedSuccessfully)
             _host.Hardware.Value.Result.Monitor?.Dispose();
         _host.Guard.MarkCleanExit();
