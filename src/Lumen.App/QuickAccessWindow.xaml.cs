@@ -63,7 +63,9 @@ public sealed partial class QuickAccessWindow : Window
         {
             // Tapping outside (into a game or the desktop) dismisses the panel.
             // (Compatibility mode only - in the default mode the panel never becomes active.)
-            if (e.WindowActivationState == WindowActivationState.Deactivated && IsOpen && _tookFocus) HideOverlay();
+            // Ignore the deactivation that can arrive right after showing (activation hand-over).
+            if (e.WindowActivationState == WindowActivationState.Deactivated && IsOpen && _tookFocus
+                && DateTime.UtcNow - _shownAt > TimeSpan.FromMilliseconds(600)) HideOverlay();
         };
 
         // Translucent dark panel (acrylic falls back to solid automatically, e.g. in battery saver).
@@ -119,6 +121,7 @@ public sealed partial class QuickAccessWindow : Window
                 SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
             }
             IsOpen = true;
+            _shownAt = DateTime.UtcNow;
             SlideIn();
             UpdateHeader();
             SetSection(_targetGame is null ? 0 : GameSection, focus: false);
@@ -176,6 +179,7 @@ public sealed partial class QuickAccessWindow : Window
     }
 
     private IntPtr _previousForeground;
+    private DateTime _shownAt;
     private bool _tookFocus;
 
     private IntPtr OtherForegroundWindow()

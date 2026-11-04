@@ -365,6 +365,7 @@ public sealed partial class MainWindow : Window
             await Task.Delay(1200);
             Log.Info($"[smoke] quick settings section step {i} ok.");
         }
+        Log.Info($"[smoke] quick settings open at end of walk: {_overlay?.IsOpen == true}.");
         _overlay?.HideOverlay();
         Log.Info("[smoke] UI walk finished.");
     }

@@ -68,5 +68,6 @@ if (-not $alive) { throw "Lumen exited during start-up" }
 $text = LogText
 if ($text -match 'Unhandled UI exception|Quick access failed') { throw "UI exception during the smoke test" }
 if ($text -notmatch '\[smoke\] UI walk finished') { throw "UI smoke walk did not finish" }
+if ($text -notmatch 'quick settings open at end of walk: True') { throw "Quick settings did not stay open during the walk" }
 Write-Host "Hotkey/overlay test: $hotkey"
 if ($hotkey -ne 'pass') { throw "Quick settings shortcut test failed" }
