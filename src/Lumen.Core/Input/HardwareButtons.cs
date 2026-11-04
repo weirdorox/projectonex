@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Lumen.Core.Input;
 
-public enum ButtonSourceKind { Keyboard, Hid, Controller }
+public enum ButtonSourceKind { Keyboard, Hid, Controller, OneX }
 
 [Flags]
 public enum KeyModifiers { None = 0, Alt = 1, Control = 2, Shift = 4, Win = 8 } // same bits as RegisterHotKey MOD_*
@@ -29,10 +29,13 @@ public sealed record ButtonBinding
     public int PressedValue { get; init; }
     // Controller
     public GamepadButtons Buttons { get; init; }
+    // OneXPlayer vendor HID button id (OneX/Home, Turbo, G-Key, M1/M2)
+    public int ButtonId { get; init; }
 
     public string Describe() => Kind switch
     {
         ButtonSourceKind.Keyboard => KeyNames.Chord(Modifiers, VirtualKey),
+        ButtonSourceKind.OneX => $"OneXPlayer {OneXVendorHid.Name(ButtonId)} button",
         ButtonSourceKind.Hid => $"HID button (VID {VendorId:X4} PID {ProductId:X4}, page {UsagePage:X4}/{Usage:X2}, byte {ByteIndex} mask {Mask:X2})",
         _ => $"Controller {ControllerChord.Describe(Buttons)}",
     };
@@ -40,6 +43,7 @@ public sealed record ButtonBinding
     public string Serialize() => Kind switch
     {
         ButtonSourceKind.Keyboard => FormattableString.Invariant($"kb:{(int)Modifiers}:{VirtualKey}"),
+        ButtonSourceKind.OneX => FormattableString.Invariant($"onex:{ButtonId}"),
         ButtonSourceKind.Hid => FormattableString.Invariant($"hid:{VendorId}:{ProductId}:{UsagePage}:{Usage}:{ByteIndex}:{Mask}:{PressedValue}"),
         _ => FormattableString.Invariant($"pad:{(int)Buttons}"),
     };
@@ -59,6 +63,7 @@ public sealed record ButtonBinding
                     Kind = ButtonSourceKind.Hid, VendorId = I(1), ProductId = I(2), UsagePage = I(3), Usage = I(4),
                     ByteIndex = I(5), Mask = I(6), PressedValue = I(7) & I(6),
                 },
+                "onex" when p.Length == 2 && I(1) is > 0 and < 256 => new ButtonBinding { Kind = ButtonSourceKind.OneX, ButtonId = I(1) },
                 "pad" when p.Length == 2 && I(1) != 0 => new ButtonBinding { Kind = ButtonSourceKind.Controller, Buttons = (GamepadButtons)I(1) },
                 _ => null,
             };
@@ -204,4 +209,48 @@ public sealed class ToggleDebouncer(TimeSpan window)
         _last = now;
         return true;
     }
+}
+
+/// <summary>
+/// OneXPlayer controller vendor interface (VID 1A86, PID FE00, HID usage page FF00/0001 - X1/X2/OneXPlayer 3).
+/// OEM buttons are reported as frames: [cmd 0xB2][0x3F]...[button id @+6]...[state @+12: 01 press, 02 release]...[0x3F][cmd].
+/// Raw Input delivers the report with a leading report-id byte (0x00); both layouts are accepted.
+/// Read-only: Lumen never writes remap commands to the controller.
+/// Frame layout and ids as documented by the open-source Handheld Companion project (OneXPlayer3.cs).
+/// </summary>
+public static class OneXVendorHid
+{
+    public const int VendorId = 0x1A86, ProductId = 0xFE00, UsagePage = 0xFF00, Usage = 0x01;
+    public const byte ButtonCommand = 0xB2, FrameMarker = 0x3F;
+
+    /// <summary>On the OneXPlayer 3 the OneX (home) button reports id 0x24.</summary>
+    public const int OneXButtonOxp3 = 0x24;
+
+    public static bool IsVendorInterface(int vid, int pid, int page, int usage) =>
+        vid == VendorId && pid == ProductId && page == UsagePage && usage == Usage;
+
+    public static (int ButtonId, bool Pressed)? TryParse(ReadOnlySpan<byte> report)
+    {
+        for (var offset = 0; offset <= 1; offset++)
+        {
+            if (report.Length < offset + 14) return null;
+            var frame = report[offset..];
+            if (frame[0] != ButtonCommand || frame[1] != FrameMarker) continue;
+            var state = frame[12];
+            if (state is not (0x01 or 0x02)) return null;
+            return (frame[6], state == 0x01);
+        }
+        return null;
+    }
+
+    public static string Name(int id) => id switch
+    {
+        0x24 => "OneX (home)",
+        0x21 => "home",
+        0x20 => "Turbo",
+        0x22 => "M1",
+        0x23 => "M2",
+        0x25 => "G-Key",
+        _ => $"0x{id:X2}",
+    };
 }

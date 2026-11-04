@@ -87,8 +87,21 @@ public sealed class HardwareButtonService : IDisposable
             : $"{_shortcut.Describe()} - reserved by another app, choose a different one";
 
         _button = ButtonBinding.Parse(_host.Settings.QuickSettingsButton);
+        var auto = false;
+        if (_button is null && OneXInterfacePresent())
+        {
+            // OneXPlayer detected: the OneX button opens Quick settings without any setup.
+            _button = new ButtonBinding { Kind = ButtonSourceKind.OneX, ButtonId = OneXVendorHid.OneXButtonOxp3 };
+            auto = true;
+        }
         switch (_button?.Kind)
         {
+            case ButtonSourceKind.OneX:
+                var listening = _raw.ListenHid([(OneXVendorHid.UsagePage, OneXVendorHid.Usage)]) > 0;
+                ButtonStatus = $"{_button.Describe()}{(auto ? " (set automatically)" : "")} - " + (listening
+                    ? "active. If nothing happens, press Detect to see which id your OneX button sends."
+                    : "OneXPlayer controller interface not found right now");
+                break;
             case ButtonSourceKind.Keyboard:
                 _buttonOwned = _raw.RegisterHotkey(ButtonHotkeyId, (int)_button.Modifiers, _button.VirtualKey);
                 if (!_buttonOwned) _raw.ListenKeyboard(); // reserved: watch it passively instead
@@ -148,10 +161,23 @@ public sealed class HardwareButtonService : IDisposable
         Log.Info("Button detection stopped.");
     }
 
+    private bool OneXInterfacePresent()
+    {
+        try
+        {
+            return _raw!.EnumerateHid().Any(d => OneXVendorHid.IsVendorInterface(d.VendorId, d.ProductId, d.UsagePage, d.Usage));
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Enumerating HID devices failed.", ex);
+            return false;
+        }
+    }
+
     private void ListenAllHid()
     {
         var devices = _raw!.EnumerateHid();
-        _raw.ListenHid(devices.Select(d => (d.UsagePage, d.Usage)));
+        _raw.ListenHid(devices.Select(d => (d.UsagePage, d.Usage)).Append((OneXVendorHid.UsagePage, OneXVendorHid.Usage)));
     }
 
     public string Availability(ButtonBinding b) =>
@@ -218,6 +244,25 @@ public sealed class HardwareButtonService : IDisposable
 
     private void OnHid(RawHidEvent e)
     {
+        // OneXPlayer OEM buttons (OneX, Turbo, G-Key, M1/M2) on the vendor interface.
+        if (OneXVendorHid.IsVendorInterface(e.Device.VendorId, e.Device.ProductId, e.Device.UsagePage, e.Device.Usage)
+            && OneXVendorHid.TryParse(e.Report) is { } onex)
+        {
+            if (_learning)
+            {
+                if (!onex.Pressed) return;
+                var binding = new ButtonBinding { Kind = ButtonSourceKind.OneX, ButtonId = onex.ButtonId };
+                Learned?.Invoke(new ButtonEvent(DateTime.Now, ButtonSourceKind.OneX, DeviceName(e.Device),
+                    $"{binding.Describe()} · vendor HID button id 0x{onex.ButtonId:X2} · report {Convert.ToHexString(e.Report.AsSpan(0, Math.Min(16, e.Report.Length)))}",
+                    binding, "can be used"));
+            }
+            else if (onex.Pressed && _button is { Kind: ButtonSourceKind.OneX } b && b.ButtonId == onex.ButtonId)
+            {
+                Fire($"OneXPlayer {OneXVendorHid.Name(onex.ButtonId)} button");
+            }
+            return;
+        }
+
         if (_learning)
         {
             if (_lastReports.TryGetValue(e.Device.Handle, out var before) && HidButtonLearner.Diff(before, e.Report) is { } diff)

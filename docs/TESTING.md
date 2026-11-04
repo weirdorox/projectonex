@@ -209,6 +209,10 @@ Repeat 5× each: power button sleep, QAM › Sleep, lid/screen-off timeout; on A
 
 ### I. Global Quick settings button (OneXPlayer 3)
 
+- [ ] Fresh start on the OneXPlayer 3: Settings › Quick settings button shows "OneXPlayer OneX (home) button (set automatically) - active"
+- [ ] Press OneX over the desktop and a game → Quick settings opens; press again → closes
+- [ ] If not: Detect, press OneX → record the listed line ("OneXPlayer … button · vendor HID button id 0x..") and use it; if nothing is listed, record whether OneXConsole is running and whether the press reaches Windows at all
+
 - [ ] Settings › Quick settings button › Detect, press the OneXPlayer button(s): record what is listed (type, device, codes) - or "no input received"
 - [ ] Use it; from the desktop, Notepad, Steam and a borderless game: press → panel slides in on the right, the game keeps focus (keeps running, no minimise, no resolution change, taskbar does not appear), press again → gone
 - [ ] Dashboard stays hidden/minimised throughout

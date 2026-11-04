@@ -75,3 +75,37 @@ public class HardwareButtonTests
         Assert.True(d.Accept(TimeSpan.FromMilliseconds(1300)));
     }
 }
+
+public class OneXVendorHidTests
+{
+    private static byte[] Frame(byte id, byte state, bool withReportId)
+    {
+        var f = new byte[64];
+        f[0] = 0xB2; f[1] = 0x3F; f[2] = 0x01; f[6] = id; f[12] = state; f[62] = 0x3F; f[63] = 0xB2;
+        return withReportId ? [0x00, .. f] : f;
+    }
+
+    [Fact]
+    public void Parses_press_and_release_with_and_without_report_id()
+    {
+        Assert.Equal((0x24, true), OneXVendorHid.TryParse(Frame(0x24, 0x01, true)));
+        Assert.Equal((0x24, false), OneXVendorHid.TryParse(Frame(0x24, 0x02, true)));
+        Assert.Equal((0x20, true), OneXVendorHid.TryParse(Frame(0x20, 0x01, false)));
+        Assert.Null(OneXVendorHid.TryParse(Frame(0x24, 0x07, true)));        // unknown state
+        var status = Frame(0x24, 0x01, true); status[1] = 0xB8;                // status frame
+        Assert.Null(OneXVendorHid.TryParse(status));
+        Assert.Null(OneXVendorHid.TryParse(new byte[5]));
+        Assert.True(OneXVendorHid.IsVendorInterface(0x1A86, 0xFE00, 0xFF00, 1));
+        Assert.Equal("OneX (home)", OneXVendorHid.Name(0x24));
+    }
+
+    [Fact]
+    public void OneX_binding_round_trip()
+    {
+        var b = new ButtonBinding { Kind = ButtonSourceKind.OneX, ButtonId = 0x24 };
+        Assert.Equal("onex:36", b.Serialize());
+        Assert.Equal(b, ButtonBinding.Parse("onex:36"));
+        Assert.Equal("OneXPlayer OneX (home) button", b.Describe());
+        Assert.Null(ButtonBinding.Parse("onex:0"));
+    }
+}

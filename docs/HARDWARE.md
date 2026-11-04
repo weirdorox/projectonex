@@ -99,3 +99,13 @@ user enables explicitly. With the default **per-user** install, the program fold
 user's own processes. For a device that other people use, install Lumen **for all users** (Program
 Files) before enabling the helper. PresentMon is only started if its Authenticode signature is valid
 and issued to Intel Corporation.
+
+## OneXPlayer OEM buttons (OneX, Turbo, G-Key, M1/M2)
+
+The OneXPlayer 3 controller exposes a vendor HID interface (VID 1A86, PID FE00, usage page FF00/0001).
+Its OEM buttons are reported there as frames `B2 3F … [id] … [01 press / 02 release] … 3F B2`
+(OneX/home = 0x24 on the OneXPlayer 3; Turbo 0x20, M1 0x22, M2 0x23, G-Key 0x25), as documented by
+the open-source Handheld Companion project. Lumen reads these with Raw Input (read-only) and uses the
+OneX button for Quick settings automatically. Lumen never sends remap commands to the controller.
+OneXConsole may react to the same button (it opens itself) - turn that off in OneXConsole or quit it.
+If a firmware version reports a different id, Settings › Quick settings button › Detect shows it.

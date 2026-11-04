@@ -36,6 +36,7 @@ the device yet – every hardware feature is **not device-tested** until you fil
 | **Screenshots / recording** | ✅ | 🟡 | ☐ | Xbox Game Bar (default shortcuts must be unchanged) |
 | **Performance advisor** | ✅ | ✅ | ☐ | read-only tips from real readings |
 | **Global Quick settings button** (detected HW button, Ctrl+Alt+Q, View+Menu) | ✅ | ✅ (binding logic) / ✅ CI: shortcut opens panel over Notepad without focus change, 5 rapid presses = 1 toggle | ☐ | Raw Input (read-only) + RegisterHotKey; the game still sees controller input |
+| **OneX button opens Quick settings** (OneXPlayer vendor HID, automatic) | ✅ | ✅ (frame parsing) | ☐ | ids from Handheld Companion's OXP3 support; confirm with Detect |
 | **Quick settings over games without taking focus** | ✅ | ✅ (CI smoke) | ☐ | not over exclusive fullscreen |
 | **In-app updates** (signed GitHub releases, stable/beta, resume, rollback) | ✅ | ✅ (rules, signature, journal) | ☐ | needs public repo + LUMEN_UPDATE_KEY; end-to-end update not yet run |
 | **Diagnostics page, log export** | ✅ | 🟡 | ☐ | zip in Documents, nothing uploaded |
